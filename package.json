@@ -1,0 +1,13 @@
+{
+  "name": "notarapida",
+  "version": "1.0.0",
+  "description": "NotaRápida: cálculo da média trimestral no navegador, sem servidor e sem armazenamento.",
+  "private": true,
+  "license": "UNLICENSED",
+  "scripts": {
+    "test": "node --test \"tests/**/*.test.js\""
+  },
+  "devDependencies": {
+    "fast-check": "4.10.2"
+  }
+}

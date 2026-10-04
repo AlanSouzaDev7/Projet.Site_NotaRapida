@@ -1,0 +1,8 @@
+# ai.txt – NotaRápida
+# O conteúdo, o código e as imagens deste site NÃO podem ser usados para
+# treinar, ajustar ou avaliar modelos de inteligência artificial.
+# Convenção voluntária (melhor esforço): só é respeitada por quem a segue.
+
+User-Agent: *
+Disallow: /
+Disallow: *

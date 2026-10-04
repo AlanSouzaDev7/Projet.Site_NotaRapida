@@ -1,0 +1,859 @@
+/* NotaRápida – Guia_Visual, layout, estados e animações.
+   Todas as cores ficam em :root e nos blocos de tema logo abaixo; o restante
+   do arquivo usa apenas variáveis. */
+
+:root {
+  /* Paleta */
+  --cor-fundo: #F4F6FA;
+  --cor-superficie: #FFFFFF;
+  --cor-superficie-suave: #EEF2F7;
+  --cor-texto: #1A2233;
+  --cor-texto-suave: #4A5568;
+  --cor-texto-invertido: #FFFFFF;
+  --cor-placeholder: #5B6472;
+  --cor-primaria: #1D4ED8;
+  --cor-destaque: #1E3A8A;
+  --cor-destaque-suave: #EFF4FF;
+  --cor-borda-campo: #6B7280;
+  --cor-erro: #B91C1C;
+  --cor-reprovado: #B91C1C;
+  --cor-aprovado: #15803D;
+  --cor-andamento: #475569;
+
+  /* Tipografia (somente fontes do sistema) */
+  --fonte: system-ui, "Segoe UI", Roboto, Arial, sans-serif;
+  --tam-pequeno: 14px;
+  --tam-base: 16px;
+  --tam-h2: 20px;
+  --tam-saudacao: 28px;
+  --tam-saudacao-p: 24px;
+  --tam-marca: 32px;
+  --tam-media: 40px;
+
+  /* Espaçamento */
+  --esp-1: 4px;
+  --esp-2: 8px;
+  --esp-3: 12px;
+  --esp-4: 16px;
+  --esp-5: 24px;
+  --esp-6: 32px;
+  --esp-7: 48px;
+
+  /* Raios e sombras */
+  --raio-p: 8px;
+  --raio-g: 12px;
+  --raio-pilula: 999px;
+  --sombra-cartao: 0 1px 2px rgba(16, 24, 40, .06), 0 4px 12px rgba(16, 24, 40, .08);
+  --sombra-entrada: 0 8px 24px rgba(16, 24, 40, .10);
+
+  /* Animações */
+  --dur-tela: 300ms;
+  --dur-curta: 200ms;
+  --curva-tela: cubic-bezier(.2, 0, .2, 1);
+
+  /* Realce do cabeçalho da Tela_do_Professor (sem realce no tema neutro) */
+  --fundo-cabecalho: transparent;
+}
+
+/* ---------- Temas (classe no body; aprovado, reprovado e erro não mudam) ---------- */
+
+body.tema--neutro {
+  --cor-primaria: #1D4ED8;
+  --cor-destaque: #1E3A8A;
+  --cor-destaque-suave: #EFF4FF;
+  --cor-fundo: #F4F6FA;
+  --cor-superficie-suave: #EEF2F7;
+  --fundo-cabecalho: transparent;
+}
+
+/* Professora: suave, com realce rosa→lilás claro no cabeçalho */
+body.tema--feminino {
+  --cor-primaria: #A3366F;
+  --cor-destaque: #7A2152;
+  --cor-destaque-suave: #FCEFF5;
+  --cor-fundo: #FBF6F9;
+  --cor-superficie-suave: #F6EAF1;
+  --fundo-cabecalho: linear-gradient(90deg, #F6EAF1 0%, #EFE7FB 100%);
+}
+
+/* Professor: sóbrio e forte */
+body.tema--masculino {
+  --cor-primaria: #1E3A5F;
+  --cor-destaque: #0F2440;
+  --cor-destaque-suave: #E8EEF5;
+  --cor-fundo: #F1F4F7;
+  --cor-superficie-suave: #E6ECF2;
+  --fundo-cabecalho: linear-gradient(90deg, #E6ECF2 0%, #F1F4F7 100%);
+}
+
+/* A Tela_Inicial é sempre neutra, mesmo durante a transição de saída. */
+.tela--inicial {
+  --cor-primaria: #1D4ED8;
+  --cor-destaque: #1E3A8A;
+  --cor-destaque-suave: #EFF4FF;
+  --cor-superficie-suave: #EEF2F7;
+}
+
+/* Troca de tema com transição de cor (~300 ms; nenhuma com movimento reduzido). */
+.tela--professor .cartao,
+.cabecalho,
+.saudacao,
+.aviso-dados,
+.campo--media,
+.resultado__mensagem,
+.lancamento,
+.meta {
+  transition: background-color var(--dur-tela) ease, color var(--dur-tela) ease, border-color var(--dur-tela) ease;
+}
+
+/* ---------- Base ---------- */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+[hidden] {
+  display: none !important;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: var(--fonte);
+  font-size: var(--tam-base);
+  font-weight: 400;
+  line-height: 1.5;
+  color: var(--cor-texto);
+  background-color: var(--cor-fundo);
+  transition: background-color var(--dur-tela) ease;
+}
+
+h1,
+h2,
+p,
+dl,
+dd,
+ol {
+  margin: 0;
+}
+
+h1,
+h2 {
+  line-height: 1.25;
+}
+
+.visualmente-oculto {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.aviso-noscript {
+  padding: var(--esp-3) var(--esp-4);
+  background: var(--cor-erro);
+  color: var(--cor-texto-invertido);
+  font-weight: 600;
+  text-align: center;
+}
+
+/* Página aberta dentro de um quadro de outro site (classe aplicada por app.js):
+   todo o conteúdo some e fica apenas o aviso. */
+html.em-quadro .palco,
+html.em-quadro noscript {
+  display: none !important;
+}
+
+.aviso-quadro {
+  padding: var(--esp-5) var(--esp-4);
+  font-weight: 600;
+  text-align: center;
+  color: var(--cor-texto);
+  background: var(--cor-superficie);
+}
+
+/* ---------- Palco e telas ---------- */
+
+.palco {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.palco > .tela {
+  grid-area: 1 / 1;
+  min-width: 0;
+}
+
+/* ---------- Cartões ---------- */
+
+.cartao {
+  min-width: 0;
+  padding: var(--esp-5);
+  background: var(--cor-superficie);
+  border-radius: var(--raio-g);
+  box-shadow: var(--sombra-cartao);
+}
+
+/* ---------- Formulários e campos ---------- */
+
+.formulario {
+  display: flex;
+  flex-direction: column;
+  gap: var(--esp-4);
+}
+
+.campo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--esp-1);
+  min-width: 0;
+}
+
+.campo__rotulo {
+  font-size: var(--tam-base);
+  font-weight: 600;
+}
+
+.campo__entrada {
+  width: 100%;
+  min-height: 44px;
+  padding: var(--esp-2) var(--esp-3);
+  font-family: inherit;
+  font-size: var(--tam-base);
+  line-height: 1.5;
+  color: var(--cor-texto);
+  background: var(--cor-superficie);
+  border: 2px solid var(--cor-borda-campo);
+  border-radius: var(--raio-p);
+}
+
+.campo__entrada--nota {
+  font-variant-numeric: tabular-nums;
+}
+
+.campo__entrada::placeholder {
+  color: var(--cor-placeholder);
+  opacity: 1;
+}
+
+.campo__entrada:focus {
+  outline: 3px solid var(--cor-primaria);
+  outline-offset: 2px;
+}
+
+.campo__entrada[aria-invalid="true"] {
+  border-color: var(--cor-erro);
+}
+
+.campo__erro {
+  font-size: var(--tam-pequeno);
+  font-weight: 600;
+  color: var(--cor-erro);
+  overflow-wrap: anywhere;
+}
+
+.campo__ajuda {
+  font-size: var(--tam-pequeno);
+  color: var(--cor-texto-suave);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Faixa compacta da média para aprovação, no topo de "Lançar notas" */
+.campo--media {
+  padding: var(--esp-3) var(--esp-4);
+  background: var(--cor-destaque-suave);
+  border-left: 4px solid var(--cor-primaria);
+  border-radius: var(--raio-p);
+}
+
+.campo__entrada--media {
+  max-width: 10rem;
+}
+
+/* ---------- Tratamento (controle segmentado) ---------- */
+
+.tratamento {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.tratamento__legenda {
+  padding: 0;
+  margin-bottom: var(--esp-2);
+  font-size: var(--tam-base);
+  font-weight: 600;
+}
+
+.tratamento__opcoes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--esp-2);
+}
+
+.tratamento__opcao {
+  position: relative;
+  flex: 1 1 auto;
+  display: flex;
+  cursor: pointer;
+}
+
+/* O rádio continua focável e anunciado; só o desenho fica no texto ao lado. */
+.tratamento__radio {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.tratamento__texto {
+  flex: 1 1 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--esp-2);
+  min-height: 44px;
+  padding: var(--esp-2) var(--esp-4);
+  font-size: var(--tam-pequeno);
+  font-weight: 600;
+  line-height: 1.25;
+  text-align: center;
+  color: var(--cor-texto);
+  background: var(--cor-superficie);
+  border: 2px solid var(--cor-borda-campo);
+  border-radius: var(--raio-pilula);
+  transition: background-color var(--dur-curta) ease, color var(--dur-curta) ease, border-color var(--dur-curta) ease;
+}
+
+/* Marcador redondo: anel vazio ou preenchido (estado não depende só da cor). */
+.tratamento__texto::before {
+  content: "";
+  flex: none;
+  width: 12px;
+  height: 12px;
+  border: 2px solid currentColor;
+  border-radius: 50%;
+}
+
+.tratamento__opcao:hover .tratamento__texto {
+  border-color: var(--cor-primaria);
+  background: var(--cor-destaque-suave);
+}
+
+.tratamento__radio:checked + .tratamento__texto {
+  color: var(--cor-texto-invertido);
+  background: var(--cor-primaria);
+  border-color: var(--cor-primaria);
+}
+
+.tratamento__radio:checked + .tratamento__texto::before {
+  background: currentColor;
+  box-shadow: inset 0 0 0 2px var(--cor-primaria);
+}
+
+.tratamento__radio:focus-visible + .tratamento__texto {
+  outline: 3px solid var(--cor-primaria);
+  outline-offset: 2px;
+}
+
+/* Referência discreta da média usada no cálculo */
+.referencia-media {
+  font-size: var(--tam-pequeno);
+  color: var(--cor-texto-suave);
+  font-variant-numeric: tabular-nums;
+}
+
+.lancamento__referencia {
+  margin-top: var(--esp-2);
+}
+
+/* ---------- Botões ---------- */
+
+.botao {
+  min-height: 44px;
+  min-width: 44px;
+  padding: var(--esp-2) var(--esp-5);
+  font-family: inherit;
+  font-size: var(--tam-base);
+  font-weight: 600;
+  line-height: 1.25;
+  border: 2px solid var(--cor-primaria);
+  border-radius: var(--raio-p);
+  cursor: pointer;
+  transition: background-color var(--dur-curta) ease, color var(--dur-curta) ease, border-color var(--dur-curta) ease;
+}
+
+.botao--largo {
+  width: 100%;
+}
+
+.botao--primario {
+  color: var(--cor-texto-invertido);
+  background: var(--cor-primaria);
+}
+
+.botao--primario:hover {
+  background: var(--cor-destaque);
+  border-color: var(--cor-destaque);
+}
+
+.botao--secundario {
+  color: var(--cor-primaria);
+  background: var(--cor-superficie);
+}
+
+.botao--secundario:hover {
+  color: var(--cor-destaque);
+  background: var(--cor-destaque-suave);
+  border-color: var(--cor-destaque);
+}
+
+.botao:focus {
+  outline: none;
+}
+
+.botao:focus-visible {
+  outline: 3px solid var(--cor-primaria);
+  outline-offset: 2px;
+}
+
+/* ---------- Tela_Inicial ---------- */
+
+.tela--inicial {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: var(--esp-5) var(--esp-4);
+}
+
+.cartao--entrada {
+  width: min(100%, 440px);
+  padding: var(--esp-6);
+  box-shadow: var(--sombra-entrada);
+  display: flex;
+  flex-direction: column;
+  gap: var(--esp-5);
+}
+
+.marca {
+  font-size: var(--tam-marca);
+  font-weight: 700;
+  color: var(--cor-primaria);
+}
+
+.nota-privacidade {
+  font-size: var(--tam-pequeno);
+  color: var(--cor-texto-suave);
+}
+
+/* ---------- Tela_do_Professor ---------- */
+
+.tela--professor {
+  width: 100%;
+  max-width: 1200px;
+  margin-inline: auto;
+  padding: var(--esp-6) var(--esp-4) var(--esp-7);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas:
+    "cabecalho acoes"
+    "aviso aviso"
+    "grade grade";
+  column-gap: var(--esp-4);
+  row-gap: var(--esp-5);
+  align-content: start;
+  align-items: start;
+}
+
+.cabecalho {
+  grid-area: cabecalho;
+  min-width: 0;
+  padding: var(--esp-2) var(--esp-4);
+  background: var(--fundo-cabecalho);
+  border-radius: var(--raio-g);
+}
+
+.saudacao {
+  font-size: var(--tam-saudacao);
+  font-weight: 700;
+  color: var(--cor-destaque);
+  overflow-wrap: anywhere;
+}
+
+.acoes {
+  grid-area: acoes;
+}
+
+.aviso-dados {
+  grid-area: aviso;
+  padding: var(--esp-3) var(--esp-4);
+  font-size: var(--tam-pequeno);
+  color: var(--cor-texto-suave);
+  background: var(--cor-superficie-suave);
+  border-left: 4px solid var(--cor-primaria);
+  border-radius: var(--raio-p);
+}
+
+.grade {
+  grid-area: grade;
+  min-width: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-areas:
+    "form"
+    "resultado"
+    "historico";
+  gap: var(--esp-5);
+  align-items: start;
+}
+
+.painel-form {
+  grid-area: form;
+}
+
+.painel-resultado {
+  grid-area: resultado;
+}
+
+.painel-historico {
+  grid-area: historico;
+}
+
+.painel__titulo {
+  font-size: var(--tam-h2);
+  font-weight: 600;
+  margin-bottom: var(--esp-4);
+}
+
+.texto-vazio {
+  color: var(--cor-texto-suave);
+}
+
+.notas-bloco {
+  display: flex;
+  flex-direction: column;
+  gap: var(--esp-2);
+}
+
+.notas-campos {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--esp-4);
+  align-items: start;
+}
+
+/* ---------- Painel_de_Resultado ---------- */
+
+.resultado {
+  display: flex;
+  flex-direction: column;
+  gap: var(--esp-3);
+}
+
+.resultado__aluno {
+  font-size: var(--tam-h2);
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.resultado__situacao,
+.lancamento__situacao {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--esp-2);
+}
+
+.selo,
+.indicador {
+  display: inline-block;
+  padding: var(--esp-1) var(--esp-3);
+  font-size: var(--tam-pequeno);
+  font-weight: 600;
+  line-height: 1.5;
+  border-radius: var(--raio-pilula);
+  border: 2px solid transparent;
+}
+
+.selo {
+  color: var(--cor-texto-invertido);
+}
+
+.selo--aprovado {
+  background: var(--cor-aprovado);
+  border-color: var(--cor-aprovado);
+}
+
+.selo--reprovado {
+  background: var(--cor-reprovado);
+  border-color: var(--cor-reprovado);
+}
+
+.selo--andamento {
+  background: var(--cor-andamento);
+  border-color: var(--cor-andamento);
+}
+
+.indicador {
+  color: var(--cor-texto);
+  background: var(--cor-superficie);
+  border-color: var(--cor-borda-campo);
+}
+
+.resultado__media {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--esp-3);
+}
+
+.resultado__media-rotulo {
+  font-weight: 600;
+  color: var(--cor-texto-suave);
+}
+
+.resultado__media-valor {
+  font-size: var(--tam-media);
+  font-weight: 700;
+  line-height: 1.25;
+  font-variant-numeric: tabular-nums;
+}
+
+.notas-lista {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--esp-2) var(--esp-4);
+}
+
+.notas-lista__item {
+  display: flex;
+  gap: var(--esp-1);
+}
+
+.notas-lista dt {
+  font-weight: 600;
+  color: var(--cor-texto-suave);
+}
+
+.notas-lista dd {
+  font-variant-numeric: tabular-nums;
+}
+
+.resultado__classificacao {
+  font-weight: 600;
+}
+
+/* Metas do resultado parcial: lista em cartões com faixa lateral */
+.metas {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--esp-2);
+}
+
+.meta {
+  padding: var(--esp-3) var(--esp-4);
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--cor-texto);
+  background: var(--cor-superficie);
+  border: 1px solid var(--cor-superficie-suave);
+  border-left: 4px solid var(--cor-primaria);
+  border-radius: var(--raio-p);
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+
+.meta--garantida {
+  border-left-color: var(--cor-aprovado);
+}
+
+.meta--impossivel {
+  border-left-color: var(--cor-reprovado);
+}
+
+.nota-faltante {
+  color: var(--cor-texto-suave);
+}
+
+.lancamento__metas {
+  font-size: var(--tam-pequeno);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.lancamento--parcial {
+  border-left: 4px solid var(--cor-andamento);
+}
+
+.resultado__mensagem {
+  padding: var(--esp-3) var(--esp-4);
+  background: var(--cor-superficie-suave);
+  border-radius: var(--raio-p);
+  overflow-wrap: anywhere;
+}
+
+/* ---------- Histórico_Recente ---------- */
+
+.painel-historico__topo {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--esp-3);
+  margin-bottom: var(--esp-4);
+}
+
+.painel-historico__topo .painel__titulo {
+  margin-bottom: 0;
+}
+
+.historico-lista {
+  padding-left: var(--esp-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--esp-3);
+}
+
+.lancamento {
+  display: list-item;
+  padding: var(--esp-3) var(--esp-4);
+  background: var(--cor-superficie-suave);
+  border-radius: var(--raio-p);
+}
+
+.lancamento::marker {
+  font-weight: 600;
+  color: var(--cor-texto-suave);
+}
+
+.lancamento__nome {
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.lancamento__notas {
+  margin: var(--esp-1) 0 var(--esp-2);
+}
+
+/* ---------- Layout responsivo ---------- */
+
+@media (min-width: 480px) {
+  .notas-campos {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1024px) {
+  .grade {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-areas:
+      "form resultado"
+      "historico historico";
+  }
+}
+
+@media (max-width: 639.98px) {
+  .tela--professor {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      "cabecalho"
+      "acoes"
+      "aviso"
+      "grade";
+    padding-top: var(--esp-5);
+  }
+
+  .saudacao {
+    font-size: var(--tam-saudacao-p);
+  }
+
+  .cartao--entrada {
+    padding: var(--esp-5);
+  }
+}
+
+/* ---------- Animações (somente opacity e transform) ---------- */
+
+@keyframes tela-sai {
+  from { opacity: 1; transform: translateY(0); }
+  to { opacity: 0; transform: translateY(-8px); }
+}
+
+@keyframes tela-entra {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes resultado-entra {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes historico-entra {
+  from { opacity: 0; transform: translateY(-6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes surgir {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.tela--saindo {
+  animation: tela-sai var(--dur-tela) var(--curva-tela) both;
+  pointer-events: none;
+}
+
+.tela--entrando {
+  animation: tela-entra var(--dur-tela) var(--curva-tela) both;
+}
+
+.anim-resultado {
+  animation: resultado-entra var(--dur-curta) ease-out both;
+}
+
+.lancamento.anim-historico {
+  animation: historico-entra var(--dur-curta) ease-out both;
+}
+
+.texto-vazio.anim-historico {
+  animation: surgir var(--dur-curta) ease-out both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --dur-tela: 0.01s;
+    --dur-curta: 0.01s;
+  }
+
+  body,
+  .botao,
+  .tratamento__texto,
+  .tela--professor .cartao,
+  .cabecalho,
+  .saudacao,
+  .aviso-dados,
+  .campo--media,
+  .resultado__mensagem,
+  .lancamento,
+  .meta {
+    transition: none;
+  }
+}

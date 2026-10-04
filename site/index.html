@@ -1,0 +1,160 @@
+<!doctype html>
+<!-- CSP em <meta> com 'self'. Contingência (design.md): se algum navegador bloquear
+     os arquivos em file://, acrescentar file: a script-src, style-src e img-src.
+     frame-ancestors é ignorado em <meta>; a proteção contra quadros fica em app.js
+     (e em _headers, nos provedores que aceitam cabeçalhos). -->
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'none'; connect-src 'none'; object-src 'none'; frame-src 'none'; worker-src 'none'; manifest-src 'none'; base-uri 'none'; form-action 'none'; require-trusted-types-for 'script'; trusted-types 'none'">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="referrer" content="no-referrer">
+  <meta name="robots" content="noai, noimageai">
+  <title>NotaRápida – Entrar</title>
+  <link rel="icon" href="img/icone.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="css/estilo.css">
+  <script src="js/notas.js" defer></script>
+  <script src="js/app.js" defer></script>
+</head>
+<body class="tema--neutro">
+  <noscript><p class="aviso-noscript">Ative o JavaScript para usar o NotaRápida.</p></noscript>
+  <p id="aviso-quadro" class="aviso-quadro" role="alert" hidden>O NotaRápida não pode ser exibido dentro de outro site.</p>
+
+  <div class="palco">
+    <!-- Tela_Inicial -->
+    <section id="tela-inicial" class="tela tela--inicial" aria-labelledby="titulo-app">
+      <div class="cartao cartao--entrada">
+        <h1 id="titulo-app" class="marca">NotaRápida</h1>
+        <form id="form-entrada" class="formulario" novalidate>
+          <div class="campo">
+            <label for="campo-professor" class="campo__rotulo">Nome do professor</label>
+            <input id="campo-professor" class="campo__entrada" type="text" maxlength="1000"
+                   autocomplete="off" spellcheck="false" autocorrect="off" autocapitalize="words">
+            <p id="erro-professor" class="campo__erro" hidden></p>
+          </div>
+          <fieldset class="tratamento">
+            <legend class="tratamento__legenda">Como prefere ser chamado(a)?</legend>
+            <div class="tratamento__opcoes">
+              <label class="tratamento__opcao" for="tratamento-feminino">
+                <input id="tratamento-feminino" class="tratamento__radio" type="radio" name="tratamento" value="feminino" autocomplete="off">
+                <span class="tratamento__texto">Professora</span>
+              </label>
+              <label class="tratamento__opcao" for="tratamento-masculino">
+                <input id="tratamento-masculino" class="tratamento__radio" type="radio" name="tratamento" value="masculino" autocomplete="off">
+                <span class="tratamento__texto">Professor</span>
+              </label>
+              <label class="tratamento__opcao" for="tratamento-neutro">
+                <input id="tratamento-neutro" class="tratamento__radio" type="radio" name="tratamento" value="neutro" autocomplete="off" checked>
+                <span class="tratamento__texto">Prefiro não informar</span>
+              </label>
+            </div>
+          </fieldset>
+          <button type="submit" class="botao botao--primario botao--largo">Entrar</button>
+        </form>
+        <p class="nota-privacidade">O seu nome é usado apenas para personalizar a tela e não é salvo.</p>
+      </div>
+    </section>
+
+    <!-- Tela_do_Professor -->
+    <section id="tela-professor" class="tela tela--professor" aria-labelledby="saudacao" hidden inert>
+      <header class="cabecalho">
+        <h1 id="saudacao" class="saudacao"></h1>
+      </header>
+
+      <p class="aviso-dados">Os dados não são salvos. O nome do professor, os nomes dos alunos e as notas ficam apenas nesta aba e são apagados ao trocar de professor, recarregar ou fechar a página. Apenas os 5 últimos lançamentos aparecem.</p>
+
+      <div class="grade">
+        <section class="cartao painel-form" aria-labelledby="titulo-form">
+          <h2 id="titulo-form" class="painel__titulo">Lançar notas</h2>
+          <form id="form-notas" class="formulario" novalidate>
+            <div class="campo campo--media">
+              <label for="campo-media" class="campo__rotulo">Média para aprovação</label>
+              <input id="campo-media" class="campo__entrada campo__entrada--nota campo__entrada--media" type="text"
+                     inputmode="decimal" maxlength="1000" autocomplete="off" spellcheck="false"
+                     autocorrect="off" autocapitalize="off" aria-describedby="ajuda-media">
+              <p id="erro-media" class="campo__erro" hidden></p>
+              <p id="ajuda-media" class="campo__ajuda">Acima da média a partir de 8,00 · Excelente a partir de 9,00</p>
+            </div>
+            <div class="campo">
+              <label for="campo-aluno" class="campo__rotulo">Nome do aluno</label>
+              <input id="campo-aluno" class="campo__entrada" type="text" maxlength="1000"
+                     autocomplete="off" spellcheck="false" autocorrect="off" autocapitalize="words">
+              <p id="erro-aluno" class="campo__erro" hidden></p>
+            </div>
+            <div class="notas-bloco">
+              <p id="dica-notas" class="campo__ajuda dica-notas">Deixe em branco os trimestres ainda sem nota.</p>
+              <div class="notas-campos">
+                <div class="campo">
+                  <label for="campo-t1" class="campo__rotulo">T1</label>
+                  <input id="campo-t1" class="campo__entrada campo__entrada--nota" type="text" inputmode="decimal"
+                         placeholder="ex.: 7,5" maxlength="1000" autocomplete="off" spellcheck="false"
+                         autocorrect="off" autocapitalize="off" aria-describedby="dica-notas">
+                  <p id="erro-t1" class="campo__erro" hidden></p>
+                </div>
+                <div class="campo">
+                  <label for="campo-t2" class="campo__rotulo">T2</label>
+                  <input id="campo-t2" class="campo__entrada campo__entrada--nota" type="text" inputmode="decimal"
+                         placeholder="ex.: 7,5" maxlength="1000" autocomplete="off" spellcheck="false"
+                         autocorrect="off" autocapitalize="off" aria-describedby="dica-notas">
+                  <p id="erro-t2" class="campo__erro" hidden></p>
+                </div>
+                <div class="campo">
+                  <label for="campo-t3" class="campo__rotulo">T3</label>
+                  <input id="campo-t3" class="campo__entrada campo__entrada--nota" type="text" inputmode="decimal"
+                         placeholder="ex.: 7,5" maxlength="1000" autocomplete="off" spellcheck="false"
+                         autocorrect="off" autocapitalize="off" aria-describedby="dica-notas">
+                  <p id="erro-t3" class="campo__erro" hidden></p>
+                </div>
+              </div>
+            </div>
+            <button type="submit" class="botao botao--primario botao--largo">Calcular média</button>
+          </form>
+        </section>
+
+        <section class="cartao painel-resultado" aria-labelledby="titulo-resultado">
+          <h2 id="titulo-resultado" class="painel__titulo">Resultado</h2>
+          <p id="resultado-vazio" class="texto-vazio">Nenhum resultado calculado ainda.</p>
+          <div id="resultado-conteudo" class="resultado" hidden>
+            <p id="res-aluno" class="resultado__aluno"></p>
+            <div class="resultado__situacao">
+              <span id="res-selo" class="selo"></span>
+              <span id="res-posicao" class="indicador"></span>
+            </div>
+            <p id="res-bloco-media" class="resultado__media">
+              <span class="resultado__media-rotulo">Média final</span>
+              <span id="res-media" class="resultado__media-valor"></span>
+            </p>
+            <dl class="notas-lista">
+              <div class="notas-lista__item"><dt>T1</dt><dd id="res-t1"></dd></div>
+              <div class="notas-lista__item"><dt>T2</dt><dd id="res-t2"></dd></div>
+              <div class="notas-lista__item"><dt>T3</dt><dd id="res-t3"></dd></div>
+            </dl>
+            <p id="res-bloco-classificacao" class="resultado__classificacao">Classificação: <span id="res-classificacao"></span></p>
+            <ul id="res-metas" class="metas" aria-label="Metas para os trimestres que faltam" hidden>
+              <li id="res-meta-aprovacao" class="meta"></li>
+              <li id="res-meta-acima" class="meta"></li>
+            </ul>
+            <p class="referencia-media">Média para aprovação: <span id="res-media-aprovacao"></span></p>
+            <p id="res-mensagem" class="resultado__mensagem"></p>
+          </div>
+        </section>
+
+        <section class="cartao painel-historico" aria-labelledby="titulo-historico">
+          <div class="painel-historico__topo">
+            <h2 id="titulo-historico" class="painel__titulo">Últimos lançamentos</h2>
+            <button type="button" id="botao-limpar" class="botao botao--secundario">Limpar histórico</button>
+          </div>
+          <p id="historico-vazio" class="texto-vazio">Nenhuma nota lançada ainda.</p>
+          <ol id="historico-lista" class="historico-lista" hidden></ol>
+        </section>
+      </div>
+
+      <div class="acoes">
+        <button type="button" id="botao-trocar" class="botao botao--secundario">Trocar professor</button>
+      </div>
+
+      <p id="anuncio" class="visualmente-oculto" aria-live="polite" aria-atomic="true"></p>
+    </section>
+  </div>
+</body>
+</html>
