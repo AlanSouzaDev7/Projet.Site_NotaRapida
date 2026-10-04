@@ -1,5 +1,7 @@
 # NotaRápida
 
+**Acesse o site: [alansouzadev7.github.io/Projet.Site_NotaRapida](https://alansouzadev7.github.io/Projet.Site_NotaRapida/)**
+
 Site de uma página para calcular a média trimestral de alunos: o professor informa o nome, lança o nome do aluno e as notas T1, T2 e T3 e vê a média final, a situação (aprovado ou reprovado), a posição em relação à média e a lista dos **20 últimos alunos consultados**. Com trimestres em branco, mostra quanto falta para a aprovação e para ficar acima da média.
 
 Tudo roda no navegador, em HTML, CSS e JavaScript puro. Não há servidor de aplicação, conta, senha, cookies nem armazenamento: os dados ficam só na memória da aba e somem ao trocar de professor, recarregar ou fechar a página. A entrada pelo nome do professor **não é autenticação**, apenas personalização.
