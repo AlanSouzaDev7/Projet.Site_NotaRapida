@@ -7,7 +7,9 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 const SITE = path.join(__dirname, '..', 'site');
-const ler = (rel) => fs.readFileSync(path.join(SITE, rel), 'utf8');
+// Quebras de linha normalizadas: no Windows o Git entrega os arquivos com CRLF, e as
+// verificações por janela de caracteres não podem depender disso.
+const ler = (rel) => fs.readFileSync(path.join(SITE, rel), 'utf8').replace(/\r\n/g, '\n');
 
 const htmlBruto = ler('index.html');
 const html = htmlBruto.replace(/<!--[\s\S]*?-->/g, ''); // sem comentários
