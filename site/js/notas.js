@@ -17,7 +17,8 @@
   var LIMITE_NOME = 100;
   // Mesmo valor do atributo maxlength dos campos (vale mesmo se o atributo for removido).
   var LIMITE_CAMPO = 1000;
-  var TAMANHO_HISTORICO = 5;
+  // Últimos alunos consultados que permanecem visíveis (somente leitura).
+  var TAMANHO_HISTORICO = 20;
   // Limites da soma para a média padrão (M = 600): 3·600, 3·800 e 3·900.
   var LIMITES_SOMA = Object.freeze({ NA_MEDIA: 1800, ACIMA: 2400, EXCELENTE: 2700 });
   var MEDIA_PADRAO = 600;
@@ -438,10 +439,25 @@
     }
   }
 
-  // Mais recente primeiro, no máximo 5; não muta a lista recebida.
-  function adicionarAoHistorico(lista, lancamento) {
-    return [lancamento].concat(lista || []).slice(0, TAMANHO_HISTORICO);
+  // Congela o valor e tudo o que há dentro dele: um Lançamento é um registro
+  // somente leitura, nunca editado depois de calculado.
+  function congelarProfundo(valor) {
+    if (valor !== null && typeof valor === 'object' && !Object.isFrozen(valor)) {
+      Object.freeze(valor);
+      Object.keys(valor).forEach(function (chave) {
+        congelarProfundo(valor[chave]);
+      });
+    }
+    return valor;
   }
+
+  // Mais recente primeiro, no máximo TAMANHO_HISTORICO; não muta a lista
+  // recebida e devolve uma lista congelada.
+  function adicionarAoHistorico(lista, lancamento) {
+    return Object.freeze([lancamento].concat(lista || []).slice(0, TAMANHO_HISTORICO));
+  }
+
+  var HISTORICO_VAZIO = Object.freeze([]);
 
   function estadoInicial() {
     return {
@@ -449,9 +465,120 @@
       nomeProfessor: null,
       tratamento: 'neutro',
       resultado: null,
-      historico: [],
+      historico: HISTORICO_VAZIO,
       proximoId: 0
     };
+  }
+
+  // Faixas de classificação para a média M (centésimos), do pior ao melhor.
+  // `de` e `ate` são a média exibida (truncada): "Na média: 6,00 a 7,99".
+  // Faixas vazias (M = 10,00) ficam de fora.
+  function faixasDaMedia(M) {
+    var l = limitesDaMedia(M);
+    var inicios = [0, l.aprovacao, l.acima, l.excelente];
+    var chaves = ['reprovado', 'na-media', 'acima', 'excelente'];
+    var rotulos = ['Reprovado', 'Na média', 'Acima da média', 'Excelente'];
+    var faixas = [];
+    for (var i = 0; i < 4; i += 1) {
+      var ate = i === 3 ? NOTA_MAXIMA : inicios[i + 1] - 1;
+      if (inicios[i] <= ate) {
+        faixas.push(Object.freeze({ chave: chaves[i], rotulo: rotulos[i], de: inicios[i], ate: ate }));
+      }
+    }
+    return Object.freeze(faixas);
+  }
+
+  // Resumo dos alunos do histórico. A média do grupo usa só os lançamentos
+  // completos (com as 3 notas) e é truncada, como a média exibida.
+  function resumirHistorico(historico) {
+    var lista = historico || [];
+    var resumo = { total: lista.length, aprovados: 0, reprovados: 0, emAndamento: 0, mediaGrupo: null };
+    var soma = 0;
+    var completos = 0;
+    lista.forEach(function (l) {
+      if (l.parcial === true) {
+        resumo.emAndamento += 1;
+        return;
+      }
+      completos += 1;
+      soma += l.soma;
+      if (rotuloSituacao(l.classificacao) === 'Reprovado') {
+        resumo.reprovados += 1;
+      } else {
+        resumo.aprovados += 1;
+      }
+    });
+    if (completos > 0) {
+      resumo.mediaGrupo = Math.floor(soma / (3 * completos));
+    }
+    return Object.freeze(resumo);
+  }
+
+  var CARIMBOS = Object.freeze({
+    excelente: 'Excelente',
+    acima: 'Acima da média',
+    aprovado: 'Aprovado',
+    reprovado: 'Reprovado',
+    andamento: 'Em andamento'
+  });
+
+  // Carimbo decorativo do resultado: { tom, texto } conforme a situação.
+  function carimboDoLancamento(lancamento) {
+    var tom = 'andamento';
+    if (lancamento.parcial !== true) {
+      tom = {
+        'Reprovado': 'reprovado',
+        'Aprovado – na média': 'aprovado',
+        'Aprovado – acima da média': 'acima',
+        'Aprovado – excelente': 'excelente'
+      }[lancamento.classificacao] || 'aprovado';
+    }
+    return Object.freeze({ tom: tom, texto: CARIMBOS[tom] });
+  }
+
+  // Recados para o professor. `autor: ''` indica texto próprio do NotaRápida.
+  var FRASES = Object.freeze([
+    Object.freeze({ texto: 'Quem ensina aprende ao ensinar, e quem aprende ensina ao aprender.', autor: 'Paulo Freire' }),
+    Object.freeze({ texto: 'Ensinar é um exercício de imortalidade.', autor: 'Rubem Alves' }),
+    Object.freeze({ texto: 'Feliz aquele que transfere o que sabe e aprende o que ensina.', autor: 'Cora Coralina' }),
+    Object.freeze({ texto: 'Se a educação sozinha não transforma a sociedade, sem ela tampouco a sociedade muda.', autor: 'Paulo Freire' }),
+    Object.freeze({ texto: 'A leitura do mundo precede sempre a leitura da palavra.', autor: 'Paulo Freire' }),
+    Object.freeze({ texto: 'Cada nota lançada é um passo na caminhada de quem aprende. Obrigado por acompanhar essa jornada.', autor: '' }),
+    Object.freeze({ texto: 'Obrigado por ensinar: o seu trabalho transforma o futuro de cada aluno.', autor: '' })
+  ]);
+
+  function diaDoAno(data) {
+    return Math.floor((Date.UTC(data.getFullYear(), data.getMonth(), data.getDate()) -
+      Date.UTC(data.getFullYear(), 0, 0)) / 86400000);
+  }
+
+  // A mesma frase o dia inteiro; muda a cada dia.
+  function fraseDoDia(data) {
+    return FRASES[diaDoAno(data) % FRASES.length];
+  }
+
+  // 15 de outubro.
+  function ehDiaDoProfessor(data) {
+    return data.getMonth() === 9 && data.getDate() === 15;
+  }
+
+  var DIAS_SEMANA = Object.freeze(['Domingo', 'Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado']);
+  var MESES = Object.freeze(['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro']);
+
+  // "Domingo, 4 de outubro" e "Quinta-feira, 1º de outubro". Feita à mão: a
+  // primeira chamada de Intl.DateTimeFormat custa dezenas de ms em celulares
+  // modestos e travaria a transição de tela.
+  function formatarDataExtenso(data) {
+    var dia = data.getDate();
+    return DIAS_SEMANA[data.getDay()] + ', ' + (dia === 1 ? '1º' : String(dia)) + ' de ' + MESES[data.getMonth()];
+  }
+
+  function periodoDoDia(data) {
+    var h = data.getHours();
+    if (h >= 5 && h < 12) {
+      return 'Bom dia';
+    }
+    return h >= 12 && h < 18 ? 'Boa tarde' : 'Boa noite';
   }
 
   // Cópia rasa do estado com as alterações indicadas (não muta o original).
@@ -539,6 +666,7 @@
           posicao: calculo.posicao
         };
       }
+      congelarProfundo(lancamento);
       return {
         estado: comAlteracoes(estado, {
           resultado: lancamento,
@@ -554,7 +682,7 @@
         return ignorado(estado);
       }
       return {
-        estado: comAlteracoes(estado, { historico: [] }),
+        estado: comAlteracoes(estado, { historico: HISTORICO_VAZIO }),
         evento: { tipo: 'HISTORICO_LIMPO', haviaItens: estado.historico.length > 0 }
       };
     }
@@ -608,6 +736,14 @@
     rotuloSituacao: rotuloSituacao,
     montarMensagem: montarMensagem,
     adicionarAoHistorico: adicionarAoHistorico,
+    faixasDaMedia: faixasDaMedia,
+    resumirHistorico: resumirHistorico,
+    carimboDoLancamento: carimboDoLancamento,
+    FRASES: FRASES,
+    fraseDoDia: fraseDoDia,
+    ehDiaDoProfessor: ehDiaDoProfessor,
+    formatarDataExtenso: formatarDataExtenso,
+    periodoDoDia: periodoDoDia,
     estadoInicial: estadoInicial,
     reduzir: reduzir
   });

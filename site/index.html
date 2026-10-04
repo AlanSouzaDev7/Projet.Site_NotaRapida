@@ -10,6 +10,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="referrer" content="no-referrer">
   <meta name="robots" content="noai, noimageai">
+  <meta name="description" content="NotaRápida: calculadora independente e não oficial da média trimestral para professores. Os dados não são salvos.">
+  <meta name="theme-color" content="#082F66">
+  <meta name="color-scheme" content="only light">
   <title>NotaRápida – Entrar</title>
   <link rel="icon" href="img/icone.svg" type="image/svg+xml">
   <link rel="stylesheet" href="css/estilo.css">
@@ -17,144 +20,338 @@
   <script src="js/app.js" defer></script>
 </head>
 <body class="tema--neutro">
+  <!-- Ícones (decorativos): usados por <use href="#i-…"> -->
+  <svg class="sprite" aria-hidden="true" focusable="false">
+    <symbol id="i-calculadora" viewBox="0 0 24 24"><rect x="5" y="3" width="14" height="18" rx="2.5"/><path d="M8.5 7.5h7M8.5 12h.01M12 12h.01M15.5 12h.01M8.5 16h.01M12 16h.01M15.5 16h.01"/></symbol>
+    <symbol id="i-bandeira" viewBox="0 0 24 24"><path d="M5 21V4M5 4h12l-2.5 4.5L17 13H5"/></symbol>
+    <symbol id="i-lista" viewBox="0 0 24 24"><path d="M9 6h11M9 12h11M9 18h11M4.5 6h.01M4.5 12h.01M4.5 18h.01"/></symbol>
+    <symbol id="i-cadeado" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2.5"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></symbol>
+    <symbol id="i-escudo" viewBox="0 0 24 24"><path d="M12 3l7.5 3v5.5c0 4.500-3 8-7.500 9.500-4.500-1.500-7.500-5-7.500-9.500V6z"/><path d="M8.5 12l2.500 2.500 4.500-5"/></symbol>
+    <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></symbol>
+    <symbol id="i-troca" viewBox="0 0 24 24"><path d="M7 8h12l-3-3M17 16H5l3 3"/></symbol>
+    <symbol id="i-livro" viewBox="0 0 24 24"><path d="M12 6.500C10.500 5 8 4.500 4 4.500v13c4 0 6.500.5 8 2 1.500-1.500 4-2 8-2v-13c-4 0-6.500.5-8 2zM12 6.500v13"/></symbol>
+    <symbol id="i-estrela" viewBox="0 0 24 24"><path d="M12 3l2.700 5.600 6.100.9-4.400 4.300 1 6.100L12 17l-5.400 2.900 1-6.100L3.200 9.500l6.100-.9z"/></symbol>
+    <symbol id="i-lixeira" viewBox="0 0 24 24"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3"/></symbol>
+  </svg>
+
   <noscript><p class="aviso-noscript">Ative o JavaScript para usar o NotaRápida.</p></noscript>
   <p id="aviso-quadro" class="aviso-quadro" role="alert" hidden>O NotaRápida não pode ser exibido dentro de outro site.</p>
 
-  <div class="palco">
-    <!-- Tela_Inicial -->
-    <section id="tela-inicial" class="tela tela--inicial" aria-labelledby="titulo-app">
-      <div class="cartao cartao--entrada">
-        <h1 id="titulo-app" class="marca">NotaRápida</h1>
-        <form id="form-entrada" class="formulario" novalidate>
-          <div class="campo">
-            <label for="campo-professor" class="campo__rotulo">Nome do professor</label>
-            <input id="campo-professor" class="campo__entrada" type="text" maxlength="1000"
-                   autocomplete="off" spellcheck="false" autocorrect="off" autocapitalize="words">
-            <p id="erro-professor" class="campo__erro" hidden></p>
-          </div>
-          <fieldset class="tratamento">
-            <legend class="tratamento__legenda">Como prefere ser chamado(a)?</legend>
-            <div class="tratamento__opcoes">
-              <label class="tratamento__opcao" for="tratamento-feminino">
-                <input id="tratamento-feminino" class="tratamento__radio" type="radio" name="tratamento" value="feminino" autocomplete="off">
-                <span class="tratamento__texto">Professora</span>
-              </label>
-              <label class="tratamento__opcao" for="tratamento-masculino">
-                <input id="tratamento-masculino" class="tratamento__radio" type="radio" name="tratamento" value="masculino" autocomplete="off">
-                <span class="tratamento__texto">Professor</span>
-              </label>
-              <label class="tratamento__opcao" for="tratamento-neutro">
-                <input id="tratamento-neutro" class="tratamento__radio" type="radio" name="tratamento" value="neutro" autocomplete="off" checked>
-                <span class="tratamento__texto">Prefiro não informar</span>
-              </label>
-            </div>
-          </fieldset>
-          <button type="submit" class="botao botao--primario botao--largo">Entrar</button>
-        </form>
-        <p class="nota-privacidade">O seu nome é usado apenas para personalizar a tela e não é salvo.</p>
+  <a class="pular" href="#conteudo">Ir para o conteúdo</a>
+
+  <div class="pagina">
+    <!-- Aviso permanente: o site NÃO é oficial. Aparece em todas as telas. -->
+    <header class="faixa-gov" aria-label="Aviso: site não oficial">
+      <div class="faixa-gov__miolo">
+        <span class="bandeirola" aria-hidden="true"></span>
+        <p class="faixa-gov__texto">Projeto independente, inspirado nas cores do Estado do Rio de Janeiro. Sem vínculo com o Governo do Estado.</p>
+        <p class="faixa-gov__selo">Site não oficial</p>
       </div>
-    </section>
+    </header>
 
-    <!-- Tela_do_Professor -->
-    <section id="tela-professor" class="tela tela--professor" aria-labelledby="saudacao" hidden inert>
-      <header class="cabecalho">
-        <h1 id="saudacao" class="saudacao"></h1>
-      </header>
-
-      <p class="aviso-dados">Os dados não são salvos. O nome do professor, os nomes dos alunos e as notas ficam apenas nesta aba e são apagados ao trocar de professor, recarregar ou fechar a página. Apenas os 5 últimos lançamentos aparecem.</p>
-
-      <div class="grade">
-        <section class="cartao painel-form" aria-labelledby="titulo-form">
-          <h2 id="titulo-form" class="painel__titulo">Lançar notas</h2>
-          <form id="form-notas" class="formulario" novalidate>
-            <div class="campo campo--media">
-              <label for="campo-media" class="campo__rotulo">Média para aprovação</label>
-              <input id="campo-media" class="campo__entrada campo__entrada--nota campo__entrada--media" type="text"
-                     inputmode="decimal" maxlength="1000" autocomplete="off" spellcheck="false"
-                     autocorrect="off" autocapitalize="off" aria-describedby="ajuda-media">
-              <p id="erro-media" class="campo__erro" hidden></p>
-              <p id="ajuda-media" class="campo__ajuda">Acima da média a partir de 8,00 · Excelente a partir de 9,00</p>
+    <main id="conteudo" class="palco" tabindex="-1">
+      <!-- Tela_Inicial -->
+      <section id="tela-inicial" class="tela tela--inicial" aria-labelledby="titulo-app">
+        <div class="entrada">
+          <div class="apresentacao">
+            <div class="marca-bloco">
+              <img class="marca__logo" src="img/icone.svg" alt="" width="52" height="52">
+              <h1 id="titulo-app" class="marca">NotaRápida</h1>
             </div>
-            <div class="campo">
-              <label for="campo-aluno" class="campo__rotulo">Nome do aluno</label>
-              <input id="campo-aluno" class="campo__entrada" type="text" maxlength="1000"
-                     autocomplete="off" spellcheck="false" autocorrect="off" autocapitalize="words">
-              <p id="erro-aluno" class="campo__erro" hidden></p>
+            <p class="apresentacao__chamada">A média trimestral dos seus alunos, em poucos segundos.</p>
+            <ul class="beneficios">
+              <li class="beneficio">
+                <svg class="icone" aria-hidden="true" focusable="false"><use href="#i-calculadora"/></svg>
+                <span><strong>Média e situação na hora.</strong> Lance T1, T2 e T3 e veja se o aluno está aprovado.</span>
+              </li>
+              <li class="beneficio">
+                <svg class="icone" aria-hidden="true" focusable="false"><use href="#i-bandeira"/></svg>
+                <span><strong>Quanto falta.</strong> Com trimestres em branco, mostra a nota necessária para aprovar.</span>
+              </li>
+              <li class="beneficio">
+                <svg class="icone" aria-hidden="true" focusable="false"><use href="#i-lista"/></svg>
+                <span><strong>Últimos 20 alunos consultados.</strong> Consulte as notas recentes, somente para leitura.</span>
+              </li>
+              <li class="beneficio">
+                <svg class="icone" aria-hidden="true" focusable="false"><use href="#i-escudo"/></svg>
+                <span><strong>Nada é salvo.</strong> Os dados ficam só nesta aba e somem ao sair.</span>
+              </li>
+            </ul>
+            <img class="apresentacao__ilustracao" src="img/ilustracao.svg" alt="" width="380" height="270" loading="lazy" decoding="async">
+          </div>
+
+          <div class="cartao cartao--entrada">
+            <h2 class="painel__titulo painel__titulo--entrada">Entrar</h2>
+            <p class="painel__descricao">Informe o seu nome para personalizar a tela. Não é preciso senha.</p>
+            <form id="form-entrada" class="formulario" novalidate>
+              <div class="campo">
+                <label for="campo-professor" class="campo__rotulo">Nome do professor</label>
+                <input id="campo-professor" class="campo__entrada" type="text" maxlength="1000"
+                       autocomplete="off" spellcheck="false" autocorrect="off" autocapitalize="words">
+                <p id="erro-professor" class="campo__erro" hidden></p>
+              </div>
+              <fieldset class="tratamento">
+                <legend class="tratamento__legenda">Como prefere ser chamado(a)?</legend>
+                <div class="tratamento__opcoes">
+                  <label class="tratamento__opcao tratamento__opcao--feminino" for="tratamento-feminino">
+                    <input id="tratamento-feminino" class="tratamento__radio" type="radio" name="tratamento" value="feminino" autocomplete="off">
+                    <span class="tratamento__texto">
+                      <span class="tratamento__amostra" aria-hidden="true"></span>
+                      <span class="tratamento__nome">Professora</span>
+                      <span class="tratamento__tema" aria-hidden="true">Tema ameixa e lilás</span>
+                    </span>
+                  </label>
+                  <label class="tratamento__opcao tratamento__opcao--masculino" for="tratamento-masculino">
+                    <input id="tratamento-masculino" class="tratamento__radio" type="radio" name="tratamento" value="masculino" autocomplete="off">
+                    <span class="tratamento__texto">
+                      <span class="tratamento__amostra" aria-hidden="true"></span>
+                      <span class="tratamento__nome">Professor</span>
+                      <span class="tratamento__tema" aria-hidden="true">Tema azul-petróleo</span>
+                    </span>
+                  </label>
+                  <label class="tratamento__opcao tratamento__opcao--neutro" for="tratamento-neutro">
+                    <input id="tratamento-neutro" class="tratamento__radio" type="radio" name="tratamento" value="neutro" autocomplete="off" checked>
+                    <span class="tratamento__texto">
+                      <span class="tratamento__amostra" aria-hidden="true"></span>
+                      <span class="tratamento__nome">Prefiro não informar</span>
+                      <span class="tratamento__tema" aria-hidden="true">Tema azul clássico</span>
+                    </span>
+                  </label>
+                </div>
+              </fieldset>
+              <button type="submit" class="botao botao--primario botao--largo">Entrar</button>
+            </form>
+            <p class="nota-privacidade">
+              <svg class="icone" aria-hidden="true" focusable="false"><use href="#i-cadeado"/></svg>
+              <span>O seu nome é usado apenas para personalizar a tela e não é salvo.</span>
+            </p>
+            <p class="nota-oficial">
+              <svg class="icone" aria-hidden="true" focusable="false"><use href="#i-info"/></svg>
+              <span><strong>Site independente e não oficial.</strong> Não pertence ao Governo do Estado do Rio de Janeiro.</span>
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Tela_do_Professor -->
+      <section id="tela-professor" class="tela tela--professor tema--neutro" aria-labelledby="saudacao" hidden inert>
+        <header class="cabecalho">
+          <p id="homenagem" class="homenagem" hidden>
+            <svg class="icone" aria-hidden="true" focusable="false"><use href="#i-estrela"/></svg>
+            <span>Hoje é o Dia do Professor! Obrigado por ensinar, inspirar e transformar vidas.</span>
+          </p>
+          <div class="cabecalho__corpo">
+            <div class="cabecalho__texto">
+              <p id="saudacao-periodo" class="cabecalho__kicker"></p>
+              <h1 id="saudacao" class="saudacao"></h1>
+              <p class="cabecalho__subtitulo">Lance as notas de T1, T2 e T3 e acompanhe os últimos 20 alunos consultados.</p>
             </div>
-            <div class="notas-bloco">
-              <p id="dica-notas" class="campo__ajuda dica-notas">Deixe em branco os trimestres ainda sem nota.</p>
-              <div class="notas-campos">
-                <div class="campo">
-                  <label for="campo-t1" class="campo__rotulo">T1</label>
-                  <input id="campo-t1" class="campo__entrada campo__entrada--nota" type="text" inputmode="decimal"
-                         placeholder="ex.: 7,5" maxlength="1000" autocomplete="off" spellcheck="false"
-                         autocorrect="off" autocapitalize="off" aria-describedby="dica-notas">
-                  <p id="erro-t1" class="campo__erro" hidden></p>
-                </div>
-                <div class="campo">
-                  <label for="campo-t2" class="campo__rotulo">T2</label>
-                  <input id="campo-t2" class="campo__entrada campo__entrada--nota" type="text" inputmode="decimal"
-                         placeholder="ex.: 7,5" maxlength="1000" autocomplete="off" spellcheck="false"
-                         autocorrect="off" autocapitalize="off" aria-describedby="dica-notas">
-                  <p id="erro-t2" class="campo__erro" hidden></p>
-                </div>
-                <div class="campo">
-                  <label for="campo-t3" class="campo__rotulo">T3</label>
-                  <input id="campo-t3" class="campo__entrada campo__entrada--nota" type="text" inputmode="decimal"
-                         placeholder="ex.: 7,5" maxlength="1000" autocomplete="off" spellcheck="false"
-                         autocorrect="off" autocapitalize="off" aria-describedby="dica-notas">
-                  <p id="erro-t3" class="campo__erro" hidden></p>
-                </div>
+            <aside class="lousa" aria-labelledby="titulo-recado">
+              <h2 id="titulo-recado" class="lousa__titulo">
+                <svg class="icone" aria-hidden="true" focusable="false"><use href="#i-livro"/></svg>
+                <span>Recado do dia</span>
+              </h2>
+              <blockquote class="lousa__citacao">
+                <p id="recado-texto" class="lousa__texto"></p>
+                <footer id="recado-rodape" class="lousa__autor" hidden>— <cite id="recado-autor"></cite></footer>
+              </blockquote>
+            </aside>
+          </div>
+        </header>
+
+        <p class="aviso-dados">
+          <svg class="icone" aria-hidden="true" focusable="false"><use href="#i-cadeado"/></svg>
+          <span><strong>Nada é salvo.</strong> O nome do professor, os nomes dos alunos e as notas ficam apenas nesta aba e são apagados ao trocar de professor, recarregar ou fechar a página. Apenas os 20 últimos alunos consultados aparecem, e esses registros são somente para leitura.</span>
+        </p>
+
+        <div class="grade">
+          <section class="cartao painel-form" aria-labelledby="titulo-form">
+            <div class="painel__cabeca">
+              <span class="painel__numero" aria-hidden="true">1</span>
+              <div>
+                <h2 id="titulo-form" class="painel__titulo">Lançar notas</h2>
+                <p class="painel__descricao">Defina a média de aprovação, informe o aluno e as notas dos trimestres.</p>
               </div>
             </div>
-            <button type="submit" class="botao botao--primario botao--largo">Calcular média</button>
-          </form>
-        </section>
+            <form id="form-notas" class="formulario" novalidate>
+              <div class="campo campo--media">
+                <label for="campo-media" class="campo__rotulo">Média para aprovação</label>
+                <input id="campo-media" class="campo__entrada campo__entrada--nota campo__entrada--media" type="text"
+                       inputmode="decimal" maxlength="1000" autocomplete="off" spellcheck="false"
+                       autocorrect="off" autocapitalize="off" aria-describedby="ajuda-media">
+                <p id="erro-media" class="campo__erro" hidden></p>
+                <p class="campo__ajuda" aria-hidden="true">Faixas de classificação com essa média:</p>
+                <ul id="ajuda-media" class="faixas"></ul>
+              </div>
+              <div class="campo">
+                <label for="campo-aluno" class="campo__rotulo">Nome do aluno</label>
+                <input id="campo-aluno" class="campo__entrada" type="text" maxlength="1000"
+                       autocomplete="off" spellcheck="false" autocorrect="off" autocapitalize="words">
+                <p id="erro-aluno" class="campo__erro" hidden></p>
+              </div>
+              <div class="notas-bloco">
+                <p id="dica-notas" class="campo__ajuda dica-notas">Notas de 0 a 10. Deixe em branco os trimestres ainda sem nota.</p>
+                <div class="notas-campos">
+                  <div class="campo">
+                    <label for="campo-t1" class="campo__rotulo">T1</label>
+                    <input id="campo-t1" class="campo__entrada campo__entrada--nota" type="text" inputmode="decimal"
+                           placeholder="ex.: 7,5" maxlength="1000" autocomplete="off" spellcheck="false"
+                           autocorrect="off" autocapitalize="off" aria-describedby="dica-notas">
+                    <p id="erro-t1" class="campo__erro" hidden></p>
+                  </div>
+                  <div class="campo">
+                    <label for="campo-t2" class="campo__rotulo">T2</label>
+                    <input id="campo-t2" class="campo__entrada campo__entrada--nota" type="text" inputmode="decimal"
+                           placeholder="ex.: 7,5" maxlength="1000" autocomplete="off" spellcheck="false"
+                           autocorrect="off" autocapitalize="off" aria-describedby="dica-notas">
+                    <p id="erro-t2" class="campo__erro" hidden></p>
+                  </div>
+                  <div class="campo">
+                    <label for="campo-t3" class="campo__rotulo">T3</label>
+                    <input id="campo-t3" class="campo__entrada campo__entrada--nota" type="text" inputmode="decimal"
+                           placeholder="ex.: 7,5" maxlength="1000" autocomplete="off" spellcheck="false"
+                           autocorrect="off" autocapitalize="off" aria-describedby="dica-notas">
+                    <p id="erro-t3" class="campo__erro" hidden></p>
+                  </div>
+                </div>
+              </div>
+              <button type="submit" class="botao botao--primario botao--largo">Calcular média</button>
+            </form>
+          </section>
 
-        <section class="cartao painel-resultado" aria-labelledby="titulo-resultado">
-          <h2 id="titulo-resultado" class="painel__titulo">Resultado</h2>
-          <p id="resultado-vazio" class="texto-vazio">Nenhum resultado calculado ainda.</p>
-          <div id="resultado-conteudo" class="resultado" hidden>
-            <p id="res-aluno" class="resultado__aluno"></p>
-            <div class="resultado__situacao">
-              <span id="res-selo" class="selo"></span>
-              <span id="res-posicao" class="indicador"></span>
+          <section id="painel-resultado" class="cartao painel-resultado" aria-labelledby="titulo-resultado">
+            <div class="painel__cabeca">
+              <span class="painel__numero" aria-hidden="true">2</span>
+              <div>
+                <h2 id="titulo-resultado" class="painel__titulo">Resultado</h2>
+                <p class="painel__descricao">Média, situação e metas do aluno que você acabou de calcular.</p>
+              </div>
             </div>
-            <p id="res-bloco-media" class="resultado__media">
-              <span class="resultado__media-rotulo">Média final</span>
-              <span id="res-media" class="resultado__media-valor"></span>
-            </p>
-            <dl class="notas-lista">
-              <div class="notas-lista__item"><dt>T1</dt><dd id="res-t1"></dd></div>
-              <div class="notas-lista__item"><dt>T2</dt><dd id="res-t2"></dd></div>
-              <div class="notas-lista__item"><dt>T3</dt><dd id="res-t3"></dd></div>
+            <div id="resultado-vazio" class="vazio">
+              <svg class="icone icone--grande" aria-hidden="true" focusable="false"><use href="#i-calculadora"/></svg>
+              <p class="texto-vazio">Nenhum resultado calculado ainda.</p>
+            </div>
+            <div id="resultado-conteudo" class="resultado" hidden>
+              <div class="resultado__topo">
+                <div class="resultado__id">
+                  <p id="res-aluno" class="resultado__aluno"></p>
+                  <div class="resultado__situacao">
+                    <span id="res-selo" class="selo"></span>
+                    <span id="res-posicao" class="indicador"></span>
+                  </div>
+                </div>
+                <div id="res-carimbo" class="carimbo" aria-hidden="true">
+                  <svg class="carimbo__estrela" focusable="false"><use href="#i-estrela"/></svg>
+                  <span id="res-carimbo-texto" class="carimbo__texto"></span>
+                </div>
+              </div>
+              <p id="res-bloco-media" class="resultado__media">
+                <span class="resultado__media-rotulo">Média final</span>
+                <span id="res-media" class="resultado__media-valor"></span>
+              </p>
+              <div class="regua">
+                <svg id="res-regua" class="regua__desenho" viewBox="0 0 320 40" aria-hidden="true" focusable="false">
+                  <clipPath id="regua-recorte"><rect x="0" y="22" width="320" height="12" rx="6"/></clipPath>
+                  <g clip-path="url(#regua-recorte)">
+                    <rect id="reg-reprovado" class="regua__faixa regua__faixa--reprovado" x="0" y="22" width="0" height="12"/>
+                    <rect id="reg-na-media" class="regua__faixa regua__faixa--na-media" x="0" y="22" width="0" height="12"/>
+                    <rect id="reg-acima" class="regua__faixa regua__faixa--acima" x="0" y="22" width="0" height="12"/>
+                    <rect id="reg-excelente" class="regua__faixa regua__faixa--excelente" x="0" y="22" width="0" height="12"/>
+                  </g>
+                  <g id="reg-marcador" class="regua__marcador" transform="translate(0 0)">
+                    <path d="M0 21L-7 9h14z"/>
+                    <path d="M0 21v14"/>
+                  </g>
+                </svg>
+                <p class="regua__pontas" aria-hidden="true"><span>0</span><span>10</span></p>
+                <p id="res-regua-rotulo" class="regua__rotulo"></p>
+              </div>
+              <ul id="res-faixas" class="faixas" aria-label="Faixas de classificação usadas neste cálculo"></ul>
+              <dl class="notas-lista">
+                <div class="notas-lista__item"><dt>T1</dt><dd id="res-t1"></dd></div>
+                <div class="notas-lista__item"><dt>T2</dt><dd id="res-t2"></dd></div>
+                <div class="notas-lista__item"><dt>T3</dt><dd id="res-t3"></dd></div>
+              </dl>
+              <p id="res-bloco-classificacao" class="resultado__classificacao">Classificação: <span id="res-classificacao"></span></p>
+              <ul id="res-metas" class="metas" aria-label="Metas para os trimestres que faltam" hidden>
+                <li id="res-meta-aprovacao" class="meta"></li>
+                <li id="res-meta-acima" class="meta"></li>
+              </ul>
+              <p id="res-mensagem" class="resultado__mensagem"></p>
+              <p class="referencia-media">Média para aprovação: <span id="res-media-aprovacao"></span></p>
+            </div>
+          </section>
+
+          <section class="cartao painel-historico" aria-labelledby="titulo-historico">
+            <div class="painel-historico__topo">
+              <div class="painel__cabeca">
+                <span class="painel__numero" aria-hidden="true">3</span>
+                <div>
+                  <h2 id="titulo-historico" class="painel__titulo">Últimos 20 alunos consultados</h2>
+                  <p class="painel__descricao">Do mais recente para o mais antigo. Os registros não podem ser editados: para corrigir uma nota, faça um novo cálculo.</p>
+                </div>
+              </div>
+              <div class="painel-historico__acoes">
+                <span class="etiqueta etiqueta--leitura">
+                  <svg class="icone" aria-hidden="true" focusable="false"><use href="#i-cadeado"/></svg>
+                  Somente leitura
+                </span>
+                <button type="button" id="botao-limpar" class="botao botao--secundario">
+                  <svg class="icone" aria-hidden="true" focusable="false"><use href="#i-lixeira"/></svg>
+                  <span>Limpar histórico</span>
+                </button>
+              </div>
+            </div>
+
+            <dl id="resumo" class="resumo" hidden>
+              <div class="resumo__item"><dt>Consultados</dt><dd><span id="sum-total"></span><span class="resumo__de"> de 20</span></dd></div>
+              <div class="resumo__item resumo__item--aprovado"><dt>Aprovados</dt><dd id="sum-aprovados"></dd></div>
+              <div class="resumo__item resumo__item--reprovado"><dt>Reprovados</dt><dd id="sum-reprovados"></dd></div>
+              <div class="resumo__item resumo__item--andamento"><dt>Em andamento</dt><dd id="sum-andamento"></dd></div>
+              <div class="resumo__item resumo__item--media"><dt>Média do grupo</dt><dd id="sum-media"></dd></div>
             </dl>
-            <p id="res-bloco-classificacao" class="resultado__classificacao">Classificação: <span id="res-classificacao"></span></p>
-            <ul id="res-metas" class="metas" aria-label="Metas para os trimestres que faltam" hidden>
-              <li id="res-meta-aprovacao" class="meta"></li>
-              <li id="res-meta-acima" class="meta"></li>
-            </ul>
-            <p class="referencia-media">Média para aprovação: <span id="res-media-aprovacao"></span></p>
-            <p id="res-mensagem" class="resultado__mensagem"></p>
-          </div>
-        </section>
+            <p id="resumo-nota" class="resumo__nota" hidden>A média do grupo considera só os alunos com as três notas lançadas. Alunos em andamento não entram na conta.</p>
 
-        <section class="cartao painel-historico" aria-labelledby="titulo-historico">
-          <div class="painel-historico__topo">
-            <h2 id="titulo-historico" class="painel__titulo">Últimos lançamentos</h2>
-            <button type="button" id="botao-limpar" class="botao botao--secundario">Limpar histórico</button>
-          </div>
-          <p id="historico-vazio" class="texto-vazio">Nenhuma nota lançada ainda.</p>
-          <ol id="historico-lista" class="historico-lista" hidden></ol>
-        </section>
+            <p id="historico-vazio" class="texto-vazio vazio">Nenhuma nota lançada ainda.</p>
+            <div id="historico-tabela" class="tabela-rolagem" hidden>
+              <table class="tabela">
+                <caption class="visualmente-oculto">Últimos alunos consultados, do mais recente ao mais antigo. Somente leitura.</caption>
+                <thead>
+                  <tr>
+                    <th scope="col">Aluno</th>
+                    <th scope="col">T1</th>
+                    <th scope="col">T2</th>
+                    <th scope="col">T3</th>
+                    <th scope="col">Média</th>
+                    <th scope="col">Situação</th>
+                    <th scope="col">Média para aprovação</th>
+                  </tr>
+                </thead>
+                <tbody id="historico-corpo"></tbody>
+              </table>
+            </div>
+          </section>
+        </div>
+
+        <!-- Último na ordem de foco (teclado); a posição visual é definida no CSS. -->
+        <div class="acoes">
+          <button type="button" id="botao-trocar" class="botao botao--secundario botao--trocar">
+            <svg class="icone" aria-hidden="true" focusable="false"><use href="#i-troca"/></svg>
+            <span>Trocar professor</span>
+          </button>
+        </div>
+
+        <p id="anuncio" class="visualmente-oculto" aria-live="polite" aria-atomic="true"></p>
+      </section>
+    </main>
+
+    <footer class="rodape">
+      <div class="rodape__miolo">
+        <p class="rodape__aviso"><strong>Site não oficial.</strong> O NotaRápida é um projeto independente, sem vínculo com o Governo do Estado do Rio de Janeiro nem com qualquer órgão público. Não usa brasão, logomarca ou outro símbolo oficial: apenas se inspira nas cores do estado.</p>
+        <p class="rodape__aviso">Não substitui diário de classe, boletim ou sistema oficial de notas. Nenhum dado é salvo ou enviado.</p>
       </div>
-
-      <div class="acoes">
-        <button type="button" id="botao-trocar" class="botao botao--secundario">Trocar professor</button>
-      </div>
-
-      <p id="anuncio" class="visualmente-oculto" aria-live="polite" aria-atomic="true"></p>
-    </section>
+      <div class="rodape__faixa" aria-hidden="true"></div>
+    </footer>
   </div>
 </body>
 </html>

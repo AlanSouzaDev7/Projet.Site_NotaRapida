@@ -6,44 +6,53 @@ on:
     branches: [main]
   workflow_dispatch:
 
-# Permissões mínimas: ler o código, publicar no Pages e emitir o token OIDC do deploy.
-permissions:
-  contents: read
-  pages: write
-  id-token: write
+# Nada é permitido por padrão: cada job pede só o que precisa (menor privilégio).
+permissions: {}
 
 # Um deploy por vez; um push novo não cancela um deploy já em andamento.
 concurrency:
   group: pages
   cancel-in-progress: false
 
+# As actions ficam presas a um commit exato (o comentário diz a versão). Uma tag
+# como v7 pode ser movida por quem tomar conta do repositório da action; um
+# commit não. Para atualizar, troque o commit conferindo a nova versão.
 jobs:
   testar:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read # testar não precisa publicar nem emitir token
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           persist-credentials: false
-      - uses: actions/setup-node@v7
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
           node-version: 24
           cache: npm
-      - run: npm ci
+      # --ignore-scripts: nenhum script de instalação de dependência é executado
+      - run: npm ci --ignore-scripts
       - run: npm test
 
   publicar:
     needs: testar
     runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      pages: write # publicar no Pages
+      id-token: write # token OIDC do deploy
     environment:
       name: github-pages
       url: ${{ steps.deploy.outputs.page_url }}
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           persist-credentials: false
-      - uses: actions/configure-pages@v6
-      - uses: actions/upload-pages-artifact@v5
+      - uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d # v6
+      - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5
         with:
           path: site
       - id: deploy
-        uses: actions/deploy-pages@v5
+        uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5

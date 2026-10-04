@@ -5,7 +5,8 @@
   "private": true,
   "license": "UNLICENSED",
   "scripts": {
-    "test": "node --test \"tests/**/*.test.js\""
+    "test": "node --test \"tests/**/*.test.js\"",
+    "servir": "node scripts/servir.js"
   },
   "devDependencies": {
     "fast-check": "4.10.2"

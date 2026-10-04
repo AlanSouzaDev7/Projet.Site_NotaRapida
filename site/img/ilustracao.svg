@@ -1,0 +1,62 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 380 270" fill="none">
+  <circle cx="190" cy="140" r="118" fill="#FFFFFF" fill-opacity=".08"/>
+  <circle cx="190" cy="140" r="82" fill="#FFFFFF" fill-opacity=".07"/>
+
+  <!-- caderno -->
+  <g transform="rotate(-5 175 140)">
+    <rect x="88" y="42" width="196" height="186" rx="12" fill="#06264F" fill-opacity=".35" transform="translate(6 10)"/>
+    <rect x="88" y="42" width="196" height="186" rx="12" fill="#FFFFFF"/>
+    <rect x="88" y="42" width="196" height="30" rx="12" fill="#0B4FA6"/>
+    <rect x="88" y="58" width="196" height="14" fill="#0B4FA6"/>
+    <rect x="104" y="52" width="70" height="8" rx="4" fill="#FFFFFF" fill-opacity=".85"/>
+    <path d="M118 72v156" stroke="#E5484D" stroke-opacity=".55" stroke-width="2"/>
+    <g stroke="#C9D8EC" stroke-width="2">
+      <path d="M100 98h172M100 122h172M100 146h172M100 170h172M100 194h172"/>
+    </g>
+    <g font-family="Segoe UI, system-ui, Arial, sans-serif" font-weight="700" font-size="15" fill="#14213A">
+      <text x="128" y="94">T1</text><text x="176" y="94">T2</text><text x="224" y="94">T3</text>
+    </g>
+    <g font-family="Segoe UI, system-ui, Arial, sans-serif" font-weight="600" font-size="16" fill="#0B4FA6">
+      <text x="128" y="119">7,5</text><text x="176" y="119">8,0</text><text x="224" y="119">9,0</text>
+      <text x="128" y="143">6,0</text><text x="176" y="143">7,0</text><text x="224" y="143">8,5</text>
+    </g>
+    <rect x="128" y="157" width="30" height="8" rx="4" fill="#C9D8EC"/>
+    <rect x="176" y="157" width="22" height="8" rx="4" fill="#C9D8EC"/>
+  </g>
+
+  <!-- carimbo -->
+  <g transform="translate(282 84) rotate(12)">
+    <circle r="46" fill="#FFFFFF" fill-opacity=".96"/>
+    <circle r="42" stroke="#0F7A3E" stroke-width="3"/>
+    <circle r="36" stroke="#0F7A3E" stroke-width="1.2"/>
+    <path d="M0 -20l5 10.2 11.2 1.6-8.1 7.9 1.9 11.1L0 5.4l-10 5.4 1.9-11.1-8.1-7.9 11.2-1.6z" fill="#F5B820" transform="translate(0 -9) scale(.8)"/>
+    <text y="17" text-anchor="middle" font-family="Segoe UI, system-ui, Arial, sans-serif" font-weight="800" font-size="10" letter-spacing=".6" fill="#0F7A3E">APROVADO</text>
+  </g>
+
+  <!-- lápis -->
+  <g transform="translate(34 252) rotate(-7)">
+    <rect x="0" y="-9" width="132" height="18" rx="2" fill="#F5B820"/>
+    <rect x="0" y="-9" width="132" height="6" fill="#FFD66B"/>
+    <rect x="-16" y="-9" width="16" height="18" rx="4" fill="#E5819B"/>
+    <rect x="0" y="-9" width="6" height="18" fill="#9AA5B4"/>
+    <path d="M132 -9l30 9-30 9z" fill="#F2D8B0"/>
+    <path d="M152 -3l10 3-10 3z" fill="#14213A"/>
+  </g>
+
+  <!-- maçã do professor -->
+  <g transform="translate(320 214)">
+    <ellipse cx="0" cy="36" rx="26" ry="5" fill="#06264F" fill-opacity=".3"/>
+    <path d="M0 -14C-10 -24 -32 -16 -32 6C-32 26 -16 38 -6 34C-3 33 3 33 6 34C16 38 32 26 32 6C32 -16 10 -24 0 -14Z" fill="#D7263D"/>
+    <path d="M-20 -2C-22 6 -19 14 -13 20" stroke="#FFFFFF" stroke-opacity=".45" stroke-width="3" stroke-linecap="round"/>
+    <path d="M0 -14C0 -22 2 -28 7 -32" stroke="#6B4423" stroke-width="3.5" stroke-linecap="round"/>
+    <path d="M6 -26C12 -36 24 -36 28 -32C24 -22 12 -20 6 -26Z" fill="#2F9E5B"/>
+  </g>
+
+  <!-- estrelas -->
+  <g fill="#F5B820">
+    <path d="M52 62l3.6 7.4 8.1 1.2-5.9 5.7 1.4 8.1L52 80l-7.2 3.8 1.4-8.1-5.9-5.7 8.1-1.2z"/>
+    <path d="M336 160l2.6 5.3 5.8.9-4.2 4.1 1 5.8-5.2-2.7-5.2 2.7 1-5.8-4.2-4.1 5.8-.9z" fill-opacity=".85"/>
+    <circle cx="30" cy="150" r="3.5" fill-opacity=".7"/>
+    <circle cx="118" cy="20" r="3" fill-opacity=".7"/>
+  </g>
+</svg>

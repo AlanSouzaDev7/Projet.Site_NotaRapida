@@ -239,3 +239,209 @@ test('_headers documenta os cabeçalhos para provedores que os aceitam', () => {
   // a CSP do cabeçalho contém a mesma política da meta
   assert.ok(h.includes(cspDaMeta().politica));
 });
+
+// ---------- Identidade visual, aviso de site não oficial e histórico somente leitura ----------
+
+test('o aviso "site não oficial" aparece na faixa do topo, na tela de entrada e no rodapé', () => {
+  const faixa = (html.match(/<header class="faixa-gov"[\s\S]*?<\/header>/) || [])[0];
+  assert.ok(faixa, 'faixa do topo');
+  assert.match(faixa, /Site não oficial/);
+  assert.match(faixa, /Sem vínculo com o Governo do Estado/);
+  const entrada = (html.match(/<p class="nota-oficial">[\s\S]*?<\/p>/) || [])[0];
+  assert.ok(entrada, 'aviso na tela de entrada');
+  assert.match(entrada, /não oficial/);
+  const rodape = (html.match(/<footer class="rodape">[\s\S]*?<\/footer>/) || [])[0];
+  assert.ok(rodape, 'rodapé');
+  assert.match(rodape, /Site não oficial/);
+  assert.match(rodape, /sem vínculo com o Governo do Estado do Rio de Janeiro/);
+  // fora das telas: a faixa e o rodapé ficam depois/antes do palco, sempre visíveis
+  assert.ok(html.indexOf('class="faixa-gov"') < html.indexOf('class="palco"'));
+  assert.ok(html.indexOf('class="palco"') < html.indexOf('class="rodape"'));
+  assert.match(css, /html\.em-quadro \.faixa-gov/);
+});
+
+test('nenhum símbolo oficial: sem brasão, sem logomarca do governo, só imagens próprias', () => {
+  const imagens = [...html.matchAll(/<img\b[^>]*\ssrc="([^"]*)"/gi)].map((m) => m[1]);
+  assert.ok(imagens.length >= 1);
+  for (const src of imagens) {
+    assert.match(src, /^img\/(icone|ilustracao)\.svg$/, src);
+  }
+  assert.doesNotMatch(html + css, /bras[aã]o\.(svg|png|jpe?g|webp)/i);
+  const titulo = (html.match(/<title>([^<]*)<\/title>/) || [])[1];
+  assert.doesNotMatch(titulo, /governo|rio de janeiro|\.gov/i);
+});
+
+test('histórico dos 20 últimos alunos: somente leitura, sem campo editável', () => {
+  const secao = (html.match(/<section class="cartao painel-historico"[\s\S]*?<\/section>/) || [])[0];
+  assert.ok(secao, 'seção do histórico');
+  assert.match(secao, /Últimos 20 alunos consultados/);
+  assert.match(secao, /Somente leitura/);
+  assert.doesNotMatch(secao, /<(input|textarea|select)\b/i);
+  assert.doesNotMatch(secao, /contenteditable/i);
+  // única ação: limpar tudo (nada de editar, excluir ou "corrigir" um registro)
+  const botoes = secao.match(/<button\b[^>]*>/gi) || [];
+  assert.deepEqual(botoes.map((b) => atributo(b, 'id')), ['botao-limpar']);
+  const app = scripts['js/app.js'];
+  assert.doesNotMatch(app, /createElement\(\s*['"](input|textarea|select)['"]/);
+  assert.doesNotMatch(app, /contenteditable|isContentEditable|designMode/i);
+  assert.doesNotMatch(css, /user-modify/);
+});
+
+test('todo ícone <use href="#…"> aponta para um símbolo do sprite', () => {
+  const simbolos = new Set([...html.matchAll(/<symbol\b[^>]*\sid="([^"]+)"/g)].map((m) => m[1]));
+  const usos = [...html.matchAll(/<use\b[^>]*\shref="#([^"]+)"/g)].map((m) => m[1]);
+  assert.ok(simbolos.size >= 8 && usos.length > 0);
+  for (const id of usos) {
+    assert.ok(simbolos.has(id), 'símbolo ausente: ' + id);
+  }
+});
+
+test('o texto da interface cita os mesmos 20 alunos que a lógica guarda', () => {
+  const N = require('../site/js/notas.js');
+  const total = String(N.constantes.TAMANHO_HISTORICO);
+  assert.match(html, new RegExp('Últimos ' + total + ' alunos consultados'));
+  assert.match(html, new RegExp('Apenas os ' + total + ' últimos alunos consultados'));
+  assert.match(html, new RegExp('de ' + total + '</span>'));
+});
+
+// ---------- Superfícies de ataque entre janelas e abas ----------
+
+test('o código não conversa com outras janelas, abas ou processos: sem postMessage, canais, workers nem window.open', () => {
+  const proibidos = [/postMessage/, /addEventListener\(\s*['"]message['"]/, /onmessage/, /\bBroadcastChannel\b/, /\bSharedWorker\b/, /\bnew\s+Worker\b/,
+    /\bwindow\.open\b/, /\bopener\b/, /\bEventSource\b/, /\bimportScripts\b/, /\bnavigator\.(serviceWorker|sendBeacon|clipboard)\b/, /\blocation\s*(\.\s*(href|assign|replace)\s*)?=[^=]/,
+    /addEventListener\(\s*['"](storage|beforeunload|unload)['"]/, /\bdocument\.domain\b/, /\bwindow\.name\b/];
+  for (const [nome, codigo] of Object.entries(scripts)) {
+    for (const re of proibidos) {
+      assert.doesNotMatch(codigo, re, nome + ': ' + re);
+    }
+  }
+  assert.doesNotMatch(html, /target\s*=\s*"_blank"/i, 'nenhum link abre outra janela');
+  assert.doesNotMatch(html, /<(iframe|frame|object|embed|form\b[^>]*\saction)/i);
+});
+
+test('_headers traz também o isolamento de origem cruzada (COOP, COEP e CORP)', () => {
+  const h = ler('_headers');
+  assert.match(h, /Cross-Origin-Embedder-Policy: require-corp/);
+  assert.match(h, /Cross-Origin-Opener-Policy: same-origin/);
+  assert.match(h, /Cross-Origin-Resource-Policy: same-origin/);
+});
+
+// ---------- Celular: hover só com mouse, alvos de toque e foco ----------
+
+// Para cada regra de estilo, devolve o seletor e a pilha de @-regras que a envolvem.
+function regrasComContexto(texto) {
+  const regras = [];
+  const pilha = [];
+  let inicio = 0;
+  const limpo = texto.replace(/\/\*[\s\S]*?\*\//g, '');
+  for (let i = 0; i < limpo.length; i += 1) {
+    const c = limpo[i];
+    if (c === '{') {
+      const prelude = limpo.slice(inicio, i).trim();
+      pilha.push(prelude);
+      if (!prelude.startsWith('@')) {
+        regras.push({ seletor: prelude, contexto: pilha.slice(0, -1) });
+      }
+      inicio = i + 1;
+    } else if (c === '}') {
+      pilha.pop();
+      inicio = i + 1;
+    } else if (c === ';') {
+      inicio = i + 1;
+    }
+  }
+  return regras;
+}
+
+test('todo :hover fica dentro de @media (hover: hover): em telas de toque o hover não gruda', () => {
+  const comHover = regrasComContexto(css).filter((r) => /:hover/.test(r.seletor));
+  assert.ok(comHover.length >= 5, 'regras de hover encontradas');
+  for (const r of comHover) {
+    const protegida = r.contexto.some((c) => /^@media[^{]*\(hover:\s*hover\)/.test(c)) ||
+      r.contexto.some((c) => /prefers-reduced-motion/.test(c)); // só desliga o movimento
+    assert.ok(protegida, 'hover sem proteção: ' + r.seletor + ' em ' + JSON.stringify(r.contexto));
+  }
+});
+
+test('nenhum texto da interface com fonte abaixo de 14px (Req. 21.13), salvo o carimbo decorativo', () => {
+  const limpo = css.replace(/\/\*[\s\S]*?\*\//g, '');
+  const tokens = {};
+  for (const m of limpo.matchAll(/(--tam-[a-z0-9-]+)\s*:\s*([^;]+);/g)) {
+    tokens[m[1]] = m[2].trim();
+  }
+  // Valor mínimo que a declaração pode ter: clamp(min, ...) vale o primeiro argumento.
+  const minimo = (valor) => {
+    const v = valor.trim().replace(/var\((--[a-z0-9-]+)\)/g, (todo, nome) => tokens[nome]);
+    const clamp = /^clamp\(\s*([\d.]+)px/.exec(v);
+    const px = clamp || /^([\d.]+)px$/.exec(v);
+    assert.ok(px, 'tamanho de fonte não reconhecido: ' + valor);
+    return Number(px[1]);
+  };
+  // Só o texto do carimbo (ilustração oculta para tecnologias assistivas, que repete o selo).
+  const isentos = ['.carimbo__texto'];
+  let conferidos = 0;
+  for (const m of limpo.matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
+    const seletor = m[1].trim().split('\n').pop().trim();
+    for (const d of m[2].matchAll(/(?:^|;|\s)font-size\s*:\s*([^;]+)/g)) {
+      if (isentos.includes(seletor) || /::after$/.test(seletor)) {
+        continue; // ::after é um desenho (content vazio), não texto
+      }
+      conferidos += 1;
+      assert.ok(minimo(d[1]) >= 14, seletor + ' usa font-size ' + d[1].trim() + ' (< 14px)');
+    }
+  }
+  assert.ok(conferidos >= 20, 'declarações de font-size conferidas: ' + conferidos);
+});
+
+test('imagem decorativa que fica oculta no celular carrega só quando aparece (loading="lazy")', () => {
+  const ilustracao = tags('img').find((t) => /ilustracao\.svg/.test(t));
+  assert.ok(ilustracao);
+  assert.equal(atributo(ilustracao, 'loading'), 'lazy');
+  assert.equal(atributo(ilustracao, 'alt'), '');
+});
+
+test('puxar para atualizar no celular não apaga os dados: overscroll-behavior no html', () => {
+  const regra = regrasComContexto(css).find((r) => r.seletor === 'html' && /overscroll-behavior-y:\s*contain/.test(css));
+  assert.ok(regra, 'regra html com overscroll-behavior-y: contain');
+  assert.match(css, /html\s*\{[^}]*overscroll-behavior-y:\s*contain/);
+});
+
+test('o navegador não escurece a página sozinho (color-scheme: only light) e o viewport permite zoom', () => {
+  const meta = tags('meta').find((t) => atributo(t, 'name') === 'color-scheme');
+  assert.ok(meta);
+  assert.equal(atributo(meta, 'content'), 'only light');
+});
+
+test('o foco não é movido sozinho para campos em telas de toque (teclado virtual)', () => {
+  const app = scripts['js/app.js'];
+  assert.match(app, /matchMedia\('\(pointer: coarse\)'\)/);
+  // todo focus() automático em "Nome do aluno" fica atrás da verificação de toque
+  for (const m of app.matchAll(/refs\.campos\.nomeAluno\.focus\(/g)) {
+    const antes = app.slice(Math.max(0, m.index - 220), m.index);
+    assert.match(antes, /ehTelaDeToque\(\)/, 'focus() sem checar tela de toque');
+  }
+});
+
+// ---------- Ordem de foco e marcos de navegação ----------
+
+test('ordem de foco da Tela_do_Professor: aluno, T1, T2, T3, Calcular, Limpar e, por último, Trocar professor', () => {
+  const tela = html.slice(html.indexOf('id="tela-professor"'), html.indexOf('</main>'));
+  const foco = [...tela.matchAll(/<(button|input|select|textarea|a)\b[^>]*>/gi)].map((m) => {
+    const id = atributo(m[0], 'id');
+    return id || (atributo(m[0], 'type') === 'submit' ? 'submit-calcular' : m[1]);
+  });
+  assert.deepEqual(foco, ['campo-media', 'campo-aluno', 'campo-t1', 'campo-t2', 'campo-t3', 'submit-calcular', 'botao-limpar', 'botao-trocar']);
+});
+
+test('nenhuma parada de foco extra: só o <main> aceita tabindex, e apenas -1', () => {
+  const tabindex = [...html.matchAll(/\stabindex\s*=\s*"([^"]*)"/g)].map((m) => m[1]);
+  assert.deepEqual(tabindex, ['-1']);
+  assert.match(html, /<main\b[^>]*\stabindex="-1"/);
+});
+
+test('marcos únicos: um banner (aviso), um main e um rodapé; sem regiões soltas', () => {
+  assert.equal((html.match(/<header class="faixa-gov"/g) || []).length, 1);
+  assert.equal((html.match(/<main\b/g) || []).length, 1);
+  assert.equal((html.match(/<footer class="rodape"/g) || []).length, 1);
+  assert.doesNotMatch(html, /role="region"/);
+});
