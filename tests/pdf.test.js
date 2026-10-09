@@ -183,7 +183,124 @@ test('o nome do arquivo não leva dado pessoal: só a data', () => {
 
 test('o módulo é congelado e não usa DOM, rede nem armazenamento', () => {
   assert.ok(Object.isFrozen(P));
-  assert.deepEqual(Object.keys(P).sort(), ['codificar', 'gerarResumo', 'medirLinhas', 'nomeDoArquivo']);
+  assert.deepEqual(Object.keys(P).sort(), ['codificar', 'formatarPercentual', 'gerarResumo', 'medirLinhas', 'nomeDoArquivo']);
+});
+
+// ---------- Gráficos da turma ----------
+
+// Posição (x, y do PDF) de um texto desenhado no fluxo de uma página.
+function posicaoDoTexto(a, pagina, procurado) {
+  const fluxos = [...a.bruto.matchAll(/<< \/Length (\d+) >>\nstream\n([\s\S]*?)\nendstream/g)].map((f) => f[2]);
+  for (const m of fluxos[pagina].matchAll(/ ([\d.]+) ([\d.]+) Td <([0-9A-F]*)> Tj ET/g)) {
+    if (decodificar(m[3]) === procurado) {
+      return { x: Number(m[1]), y: Number(m[2]) };
+    }
+  }
+  return null;
+}
+
+function turma() {
+  // 2 aprovados, 1 reprovado e 2 em andamento
+  return sessao([
+    ['Ana', '8', '9', '10'],
+    ['Bia', '7', '7', '7'],
+    ['Caio', '2', '3', '4'],
+    ['Davi', '7', '', ''],
+    ['Eva', '', '5', '']
+  ]);
+}
+
+test('no fim do documento vem a visão geral da turma: média, pizza e barras', () => {
+  const e = turma();
+  const r = N.resumirHistorico(e.historico);
+  const a = analisar(gerar(e));
+  for (const esperado of ['Visão geral da turma', 'Média da turma', N.formatarCentesimos(r.mediaGrupo), 'Pizza: situação dos alunos',
+    'Barras: alunos por situação', 'Aprovados', 'Reprovados', 'Em andamento']) {
+    assert.ok(a.texto.includes(esperado), 'falta: ' + esperado);
+  }
+  // legenda da pizza: contagem e percentual de cada situação, com os alunos em andamento
+  assert.ok(a.texto.includes('2 alunos  ·  40%'));
+  assert.ok(a.texto.includes('1 aluno  ·  20%'));
+  // vem depois da última linha da tabela e só aparece uma vez
+  assert.equal(a.texto.split('Visão geral da turma').length - 1, 1);
+  assert.ok(a.texto.indexOf('Visão geral da turma') > a.texto.indexOf('Eva'));
+  assert.ok(a.texto.includes('Alunos em andamento (2) aparecem nos gráficos, mas ainda não entram na média.'));
+  assert.ok(a.texto.includes('Média de 3 alunos com as três notas lançadas.'));
+});
+
+test('a pizza e as barras ficam lado a lado, na mesma altura', () => {
+  const a = analisar(gerar(turma()));
+  const pizza = posicaoDoTexto(a, 0, 'Pizza: situação dos alunos');
+  const barras = posicaoDoTexto(a, 0, 'Barras: alunos por situação');
+  assert.ok(pizza && barras, 'títulos dos dois gráficos');
+  assert.equal(pizza.y, barras.y, 'mesma altura');
+  assert.ok(barras.x > pizza.x + 200, 'barras à direita da pizza (x ' + pizza.x + ' e ' + barras.x + ')');
+  assert.ok(barras.x < 595 && pizza.x >= 40);
+});
+
+test('os alunos em andamento entram nos gráficos; quando todos estão em andamento a média fica em branco', () => {
+  const e = sessao([['Davi', '7', '', ''], ['Eva', '', '5', ''], ['Fabi', '', '', '9']]);
+  const a = analisar(gerar(e));
+  assert.ok(a.texto.includes('3 alunos  ·  100%'), 'toda a pizza é "em andamento"');
+  assert.ok(a.texto.includes('0 alunos  ·  0%'));
+  assert.ok(a.texto.includes('Todos os 3 alunos consultados estão em andamento e aparecem nos gráficos.'));
+  assert.ok(a.texto.includes('Ainda não há aluno com as três notas lançadas.'));
+  assert.ok(a.texto.includes('Média da turma'));
+  const so1 = sessao([['Solo', '7', '8', '9']]);
+  assert.ok(analisar(gerar(so1)).texto.includes('1 aluno  ·  100%'));
+});
+
+test('a média da turma é a do grupo: só quem tem as três notas, como na tela', () => {
+  const e = turma();
+  const r = N.resumirHistorico(e.historico);
+  assert.equal(r.aprovados + r.reprovados, 3);
+  const a = analisar(gerar(e));
+  assert.equal(r.mediaGrupo, Math.floor((2700 + 2100 + 900) / 9));
+  assert.ok(a.texto.includes(N.formatarCentesimos(r.mediaGrupo)));
+});
+
+test('a visão geral aparece uma vez, no fim, com qualquer quantidade de alunos (nova página se não couber)', () => {
+  for (const quantidade of [1, 4, 8, 12, 16, 20, 21, 22, 23, 24, 25, 26, 30, 35]) {
+    const alunos = [];
+    for (let i = 1; i <= quantidade; i += 1) {
+      alunos.push(['Aluno ' + i, String(i % 11), i % 4 === 0 ? '' : String((i * 3) % 11), i % 5 === 0 ? '' : '8']);
+    }
+    const e = sessao(alunos);
+    const a = analisar(gerar(e));
+    assert.equal(a.texto.split('Visão geral da turma').length - 1, 1, quantidade + ' alunos');
+    const ultima = a.textos[a.paginas - 1].join('\n');
+    assert.ok(ultima.includes('Visão geral da turma') && ultima.includes('Barras: alunos por situação'), 'está na última página (' + quantidade + ' alunos)');
+    assert.ok(ultima.includes('Página ' + a.paginas + ' de ' + a.paginas));
+  }
+});
+
+test('os gráficos usam as cores do tema nos títulos e as cores fixas de aprovado, reprovado e em andamento', () => {
+  const alunos = [['Ana', '8', '9', '10'], ['Caio', '2', '3', '4'], ['Davi', '7', '', '']];
+  const neutro = bruto(gerar(sessao(alunos, 'neutro'), 'neutro'));
+  const feminino = bruto(gerar(sessao(alunos, 'feminino'), 'feminino'));
+  const verde = '0.082 0.502 0.239 rg';
+  const vermelho = '0.725 0.11 0.11 rg';
+  for (const arquivo of [neutro, feminino]) {
+    assert.ok(arquivo.includes(verde), 'verde dos aprovados');
+    assert.ok(arquivo.includes(vermelho), 'vermelho dos reprovados');
+    assert.ok(arquivo.includes('0.278 0.333 0.412 rg'), 'cinza dos em andamento');
+  }
+  assert.notEqual(neutro, feminino);
+});
+
+test('percentuais com uma casa e vírgula; grupos iguais mostram o mesmo valor', () => {
+  assert.equal(P.formatarPercentual(9, 34), '26,5%');
+  assert.equal(P.formatarPercentual(16, 34), '47,1%');
+  assert.equal(P.formatarPercentual(1, 2), '50%');
+  assert.equal(P.formatarPercentual(0, 5), '0%');
+  assert.equal(P.formatarPercentual(5, 5), '100%');
+  assert.equal(P.formatarPercentual(1, 3), '33,3%');
+  assert.equal(P.formatarPercentual(1, 0), '0%');
+  fc.assert(fc.property(fc.integer({ min: 0, max: 35 }), fc.integer({ min: 1, max: 35 }), (v, t) => {
+    fc.pre(v <= t);
+    assert.match(P.formatarPercentual(v, t), /^(\d{1,2}|100)(,\d)?%$/);
+    assert.equal(P.formatarPercentual(v, t), P.formatarPercentual(v, t));
+  }), RUNS);
 });
 
 // ---------- Propriedades ----------

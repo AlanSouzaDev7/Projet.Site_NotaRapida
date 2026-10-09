@@ -33,6 +33,7 @@
     <symbol id="i-livro" viewBox="0 0 24 24"><path d="M12 6.500C10.500 5 8 4.500 4 4.500v13c4 0 6.500.5 8 2 1.500-1.500 4-2 8-2v-13c-4 0-6.500.5-8 2zM12 6.500v13"/></symbol>
     <symbol id="i-estrela" viewBox="0 0 24 24"><path d="M12 3l2.700 5.600 6.100.9-4.400 4.300 1 6.100L12 17l-5.400 2.900 1-6.100L3.200 9.500l6.100-.9z"/></symbol>
     <symbol id="i-lixeira" viewBox="0 0 24 24"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3"/></symbol>
+    <symbol id="i-lapis" viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16v4zM13.500 6.500l4 4"/></symbol>
     <symbol id="i-pdf" viewBox="0 0 24 24"><path d="M6 3h8l4 4v14H6zM14 3v4h4M12 11v6M9.500 14.500 12 17l2.500-2.500"/></symbol>
   </svg>
 
@@ -72,7 +73,7 @@
               </li>
               <li class="beneficio">
                 <svg class="icone" aria-hidden="true" focusable="false"><use href="#i-lista"/></svg>
-                <span><strong>Últimos 35 alunos consultados.</strong> Consulte as notas recentes, somente para leitura, e baixe um resumo em PDF.</span>
+                <span><strong>Últimos 35 alunos consultados.</strong> Consulte as notas recentes, corrija uma nota se precisar e baixe um resumo em PDF.</span>
               </li>
               <li class="beneficio">
                 <svg class="icone" aria-hidden="true" focusable="false"><use href="#i-escudo"/></svg>
@@ -163,7 +164,7 @@
 
         <p class="aviso-dados">
           <svg class="icone" aria-hidden="true" focusable="false"><use href="#i-cadeado"/></svg>
-          <span><strong>Nada é salvo.</strong> O nome do professor, os nomes dos alunos e as notas ficam apenas nesta aba e são apagados ao trocar de professor, recarregar ou fechar a página. Apenas os 35 últimos alunos consultados aparecem, e esses registros são somente para leitura. O resumo em PDF só existe se você o baixar: o arquivo fica no seu dispositivo, fora do NotaRápida.</span>
+          <span><strong>Nada é salvo.</strong> O nome do professor, os nomes dos alunos e as notas ficam apenas nesta aba e são apagados ao trocar de professor, recarregar ou fechar a página. Apenas os 35 últimos alunos consultados aparecem, e você pode corrigir as notas deles. O resumo em PDF só existe se você o baixar: o arquivo fica no seu dispositivo, fora do NotaRápida.</span>
         </p>
 
         <div class="grade">
@@ -290,14 +291,10 @@
                 <span class="painel__numero" aria-hidden="true">3</span>
                 <div>
                   <h2 id="titulo-historico" class="painel__titulo">Últimos 35 alunos consultados</h2>
-                  <p class="painel__descricao">Do mais recente para o mais antigo. Os registros não podem ser editados: para corrigir uma nota, faça um novo cálculo.</p>
+                  <p class="painel__descricao">Do mais recente para o mais antigo. Para corrigir uma nota, use o botão Editar na linha do aluno.</p>
                 </div>
               </div>
               <div class="painel-historico__acoes">
-                <span class="etiqueta etiqueta--leitura">
-                  <svg class="icone" aria-hidden="true" focusable="false"><use href="#i-cadeado"/></svg>
-                  Somente leitura
-                </span>
                 <button type="button" id="botao-pdf" class="botao botao--secundario" disabled>
                   <svg class="icone" aria-hidden="true" focusable="false"><use href="#i-pdf"/></svg>
                   <span>Baixar resumo em PDF</span>
@@ -308,6 +305,38 @@
                 </button>
               </div>
             </div>
+
+            <form id="form-edicao" class="edicao" aria-labelledby="titulo-edicao" novalidate hidden>
+              <h3 id="titulo-edicao" class="edicao__titulo"></h3>
+              <p id="dica-edicao" class="campo__ajuda">Corrija as notas. Deixe em branco o trimestre ainda sem nota. A média e a situação são recalculadas.</p>
+              <div class="notas-campos">
+                <div class="campo">
+                  <label for="campo-edicao-t1" class="campo__rotulo">T1</label>
+                  <input id="campo-edicao-t1" class="campo__entrada campo__entrada--nota" type="text" inputmode="decimal"
+                         placeholder="ex.: 7,5" maxlength="1000" autocomplete="off" spellcheck="false"
+                         autocorrect="off" autocapitalize="off" aria-describedby="dica-edicao">
+                  <p id="erro-edicao-t1" class="campo__erro" hidden></p>
+                </div>
+                <div class="campo">
+                  <label for="campo-edicao-t2" class="campo__rotulo">T2</label>
+                  <input id="campo-edicao-t2" class="campo__entrada campo__entrada--nota" type="text" inputmode="decimal"
+                         placeholder="ex.: 7,5" maxlength="1000" autocomplete="off" spellcheck="false"
+                         autocorrect="off" autocapitalize="off" aria-describedby="dica-edicao">
+                  <p id="erro-edicao-t2" class="campo__erro" hidden></p>
+                </div>
+                <div class="campo">
+                  <label for="campo-edicao-t3" class="campo__rotulo">T3</label>
+                  <input id="campo-edicao-t3" class="campo__entrada campo__entrada--nota" type="text" inputmode="decimal"
+                         placeholder="ex.: 7,5" maxlength="1000" autocomplete="off" spellcheck="false"
+                         autocorrect="off" autocapitalize="off" aria-describedby="dica-edicao">
+                  <p id="erro-edicao-t3" class="campo__erro" hidden></p>
+                </div>
+              </div>
+              <div class="edicao__acoes">
+                <button type="submit" id="botao-salvar-edicao" class="botao botao--primario">Salvar alterações</button>
+                <button type="button" id="botao-cancelar-edicao" class="botao botao--secundario">Cancelar</button>
+              </div>
+            </form>
 
             <dl id="resumo" class="resumo" hidden>
               <div class="resumo__item"><dt>Consultados</dt><dd><span id="sum-total"></span><span class="resumo__de"> de 35</span></dd></div>
@@ -321,7 +350,7 @@
             <p id="historico-vazio" class="texto-vazio vazio">Nenhuma nota lançada ainda.</p>
             <div id="historico-tabela" class="tabela-rolagem" hidden>
               <table class="tabela">
-                <caption class="visualmente-oculto">Últimos alunos consultados, do mais recente ao mais antigo. Somente leitura.</caption>
+                <caption class="visualmente-oculto">Últimos alunos consultados, do mais recente ao mais antigo. Cada linha tem o botão Editar para corrigir as notas.</caption>
                 <thead>
                   <tr>
                     <th scope="col">Aluno</th>
@@ -331,6 +360,7 @@
                     <th scope="col">Média</th>
                     <th scope="col">Situação</th>
                     <th scope="col">Média para aprovação</th>
+                    <th scope="col">Ações</th>
                   </tr>
                 </thead>
                 <tbody id="historico-corpo"></tbody>

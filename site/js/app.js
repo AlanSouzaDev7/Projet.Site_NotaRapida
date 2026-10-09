@@ -55,6 +55,12 @@
     { chave: 't2', campo: 'campo-t2', erro: 'erro-t2', ajuda: 'dica-notas' },
     { chave: 't3', campo: 'campo-t3', erro: 'erro-t3', ajuda: 'dica-notas' }
   ];
+  // Campos T1, T2 e T3 do editor de notas do histórico.
+  var CAMPOS_EDICAO = [
+    { chave: 't1', campo: 'campo-edicao-t1', erro: 'erro-edicao-t1' },
+    { chave: 't2', campo: 'campo-edicao-t2', erro: 'erro-edicao-t2' },
+    { chave: 't3', campo: 'campo-edicao-t3', erro: 'erro-edicao-t3' }
+  ];
   var TEXTO_EM_ANDAMENTO = 'Em andamento';
   var CLASSES_META = ['meta--possivel', 'meta--garantida', 'meta--impossivel'];
   var CLASSES_CARIMBO = ['carimbo--excelente', 'carimbo--acima', 'carimbo--aprovado', 'carimbo--reprovado', 'carimbo--andamento'];
@@ -72,6 +78,7 @@
   var mediaDaLegenda = null;
   // Endereço temporário (blob:) do último PDF gerado, só em memória; é liberado
   // ao esvaziar o histórico, trocar de professor, sair da página ou após 1 minuto.
+  var edicao = { id: null }; // aluno do histórico cujas notas estão no editor
   var urlDoPdf = '';
   var temporizadorPdf = 0;
   var TEMPO_DO_PDF = 60000;
@@ -132,6 +139,15 @@
     refs.resMensagem = el('res-mensagem');
     refs.botaoLimpar = el('botao-limpar');
     refs.botaoPdf = el('botao-pdf');
+    refs.formEdicao = el('form-edicao');
+    refs.tituloEdicao = el('titulo-edicao');
+    refs.botaoCancelarEdicao = el('botao-cancelar-edicao');
+    refs.camposEdicao = {};
+    refs.errosEdicao = {};
+    CAMPOS_EDICAO.forEach(function (c) {
+      refs.camposEdicao[c.chave] = el(c.campo);
+      refs.errosEdicao[c.chave] = el(c.erro);
+    });
     refs.historicoVazio = el('historico-vazio');
     refs.historicoTabela = el('historico-tabela');
     refs.historicoCorpo = el('historico-corpo');
@@ -520,6 +536,7 @@
     var parcial = lancamento.parcial === true;
     var tr = document.createElement('tr');
     tr.className = parcial ? 'lancamento lancamento--parcial' : 'lancamento';
+    tr.setAttribute('data-id', String(lancamento.id));
 
     var nome = criarCelula('th', '', 'lancamento__nome');
     nome.setAttribute('scope', 'row');
@@ -556,6 +573,14 @@
     aprovacao.textContent = N.formatarCentesimos(lancamento.mediaAprovacao);
     tr.appendChild(aprovacao);
 
+    var acoes = criarCelula('td', '', 'lancamento__acoes');
+    var editar = criarTexto('button', 'botao botao--secundario botao--tabela', 'Editar');
+    editar.type = 'button';
+    editar.setAttribute('data-editar', String(lancamento.id));
+    editar.setAttribute('aria-label', 'Editar notas de ' + lancamento.nomeAluno);
+    acoes.appendChild(editar);
+    tr.appendChild(acoes);
+
     return tr;
   }
 
@@ -585,6 +610,7 @@
   // Esvazia a tabela e o resumo (limpar o histórico, trocar de professor).
   function esvaziarHistorico() {
     liberarPdf();
+    fecharEdicao(false);
     refs.historicoCorpo.replaceChildren();
     refs.historicoTabela.hidden = true;
     refs.historicoVazio.hidden = false;
@@ -764,6 +790,7 @@
     renderResultado(lancamento);
     var itemNovo = inserirNoHistorico(lancamento);
     renderResumo(estado.historico);
+    sincronizarEdicao();
     esvaziarCamposDoAluno();
     limparErrosNotas();
     if (ehTelaDeToque()) {
@@ -805,6 +832,154 @@
     animHistorico = animar(refs.historicoVazio, 'anim-historico', DUR_CURTA, function () {
       animHistorico = null;
     });
+  }
+
+  // ---------- Correção de notas do histórico ----------
+
+  // Mesmos campos T1, T2 e T3 do formulário, no editor que abre acima da tabela.
+  function encontrarLancamento(id) {
+    for (var i = 0; i < estado.historico.length; i += 1) {
+      if (estado.historico[i].id === id) {
+        return estado.historico[i];
+      }
+    }
+    return null;
+  }
+
+  function linhaDoLancamento(id) {
+    return refs.historicoCorpo.querySelector('tr[data-id="' + id + '"]');
+  }
+
+  function marcarLinhaEmEdicao(id, ligada) {
+    var linha = linhaDoLancamento(id);
+    if (linha) {
+      linha.classList.toggle('lancamento--editando', ligada);
+    }
+  }
+
+  function limparErrosEdicao() {
+    CAMPOS_EDICAO.forEach(function (c) {
+      limparErro(refs.camposEdicao[c.chave], refs.errosEdicao[c.chave], 'dica-edicao');
+    });
+  }
+
+  function mostrarErrosEdicao(erros) {
+    CAMPOS_EDICAO.forEach(function (c) {
+      if (Object.prototype.hasOwnProperty.call(erros, c.chave)) {
+        mostrarErro(refs.camposEdicao[c.chave], refs.errosEdicao[c.chave], erros[c.chave], 'dica-edicao');
+      }
+    });
+  }
+
+  function abrirEdicao(id) {
+    var registro = encontrarLancamento(id);
+    if (!registro) {
+      return;
+    }
+    if (edicao.id !== null) {
+      marcarLinhaEmEdicao(edicao.id, false);
+    }
+    limparErrosEdicao();
+    edicao.id = id;
+    refs.tituloEdicao.textContent = 'Editar notas de ' + registro.nomeAluno;
+    CAMPOS_EDICAO.forEach(function (c, i) {
+      refs.camposEdicao[c.chave].value = registro.notas[i] === null ? '' : N.formatarCentesimos(registro.notas[i]);
+    });
+    refs.formEdicao.hidden = false;
+    marcarLinhaEmEdicao(id, true);
+    refs.camposEdicao.t1.focus({ preventScroll: true });
+    refs.formEdicao.scrollIntoView({ behavior: movimentoReduzido() ? 'auto' : 'smooth', block: 'center' });
+  }
+
+  // Fecha o editor sem guardar nada; devolve o foco ao botão Editar da linha.
+  function fecharEdicao(devolverFoco) {
+    var id = edicao.id;
+    if (id === null) {
+      return;
+    }
+    edicao.id = null;
+    limparErrosEdicao();
+    CAMPOS_EDICAO.forEach(function (c) {
+      refs.camposEdicao[c.chave].value = '';
+    });
+    refs.tituloEdicao.textContent = '';
+    refs.formEdicao.hidden = true;
+    marcarLinhaEmEdicao(id, false);
+    if (devolverFoco) {
+      var linha = linhaDoLancamento(id);
+      var botao = linha ? linha.querySelector('button[data-editar]') : null;
+      if (botao) {
+        botao.focus();
+      }
+    }
+  }
+
+  // O aluno em edição saiu do histórico (passou dos 35, ou o histórico foi limpo).
+  function sincronizarEdicao() {
+    if (edicao.id !== null && !encontrarLancamento(edicao.id)) {
+      fecharEdicao(false);
+    }
+  }
+
+  function aoClicarNoHistorico(evento) {
+    var botao = evento.target && evento.target.closest ? evento.target.closest('button[data-editar]') : null;
+    if (botao && refs.historicoCorpo.contains(botao)) {
+      abrirEdicao(Number(botao.getAttribute('data-editar')));
+    }
+  }
+
+  function aoEnviarEdicao(evento) {
+    evento.preventDefault();
+    if (edicao.id === null) {
+      return;
+    }
+    var campos = {};
+    CAMPOS_EDICAO.forEach(function (c) {
+      campos[c.chave] = N.truncarCampo(refs.camposEdicao[c.chave].value);
+    });
+    var r = N.reduzir(estado, { tipo: 'EDITAR_LANCAMENTO', id: edicao.id, campos: campos });
+    limparErrosEdicao();
+
+    if (r.evento.tipo === 'EDICAO_INVALIDA') {
+      mostrarErrosEdicao(r.evento.erros);
+      refs.camposEdicao[r.evento.primeiroInvalido].focus();
+      return;
+    }
+    if (r.evento.tipo === 'EDICAO_SEM_ALTERACAO') {
+      fecharEdicao(true);
+      anunciar('Nenhuma nota foi alterada.');
+      return;
+    }
+    if (r.evento.tipo !== 'LANCAMENTO_EDITADO') {
+      return;
+    }
+
+    estado = r.estado;
+    var corrigido = r.evento.lancamento;
+    var antiga = linhaDoLancamento(corrigido.id);
+    var nova = criarLancamento(corrigido);
+    if (antiga) {
+      refs.historicoCorpo.replaceChild(nova, antiga);
+    }
+    renderResumo(estado.historico);
+    if (estado.resultado && estado.resultado.id === corrigido.id) {
+      renderResultado(corrigido); // o painel de resultado mostrava este mesmo aluno
+    }
+    fecharEdicao(true);
+    anunciar('Notas de ' + corrigido.nomeAluno + ' atualizadas. ' + textoAnuncio(corrigido));
+    if (animHistorico) {
+      animHistorico.cancelar();
+    }
+    animHistorico = animar(nova, 'anim-historico', DUR_CURTA, function () {
+      animHistorico = null;
+    });
+  }
+
+  function aoTeclarNaEdicao(evento) {
+    if (evento.key === 'Escape' || evento.key === 'Esc') {
+      evento.preventDefault();
+      fecharEdicao(true);
+    }
   }
 
   // Gera o resumo em PDF a partir do histórico em memória (estado.historico, a
@@ -921,6 +1096,12 @@
     refs.campos.media.addEventListener('input', aoDigitarMedia);
     refs.botaoLimpar.addEventListener('click', aoLimparHistorico);
     refs.botaoPdf.addEventListener('click', aoBaixarPdf);
+    refs.historicoCorpo.addEventListener('click', aoClicarNoHistorico);
+    refs.formEdicao.addEventListener('submit', aoEnviarEdicao);
+    refs.formEdicao.addEventListener('keydown', aoTeclarNaEdicao);
+    refs.botaoCancelarEdicao.addEventListener('click', function () {
+      fecharEdicao(true);
+    });
     refs.botaoTrocar.addEventListener('click', aoTrocarProfessor);
 
     window.addEventListener('pagehide', function () {

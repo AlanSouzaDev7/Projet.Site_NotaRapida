@@ -107,7 +107,7 @@ test('JS sem sinks de HTML, eval, armazenamento, rede, histórico, console ou m�
 test('campos de texto com autocomplete="off" e maxlength="1000"; rádios sem autocompletar', () => {
   const inputs = tags('input');
   const texto = inputs.filter((t) => atributo(t, 'type') === 'text');
-  assert.equal(texto.length, 6); // professor, média, aluno, T1, T2, T3
+  assert.equal(texto.length, 9); // professor, média, aluno, T1, T2, T3 e T1, T2, T3 da edição do histórico
   for (const t of texto) {
     assert.equal(atributo(t, 'autocomplete'), 'off', t);
     assert.equal(atributo(t, 'maxlength'), '1000', t);
@@ -273,21 +273,28 @@ test('nenhum símbolo oficial: sem brasão, sem logomarca do governo, só imagen
   assert.doesNotMatch(titulo, /governo|rio de janeiro|\.gov/i);
 });
 
-test('histórico dos 35 últimos alunos: somente leitura, sem campo editável', () => {
+test('histórico dos 35 últimos alunos: as notas só mudam pelo formulário de edição (T1, T2 e T3), nunca no próprio registro', () => {
   const secao = (html.match(/<section class="cartao painel-historico"[\s\S]*?<\/section>/) || [])[0];
   assert.ok(secao, 'seção do histórico');
   assert.match(secao, /Últimos 35 alunos consultados/);
-  assert.match(secao, /Somente leitura/);
-  assert.doesNotMatch(secao, /<(input|textarea|select)\b/i);
+  assert.doesNotMatch(secao, /Somente leitura/i);
+  assert.doesNotMatch(secao, /não podem ser editados/i);
+  assert.doesNotMatch(secao, /<(textarea|select)\b/i);
   assert.doesNotMatch(secao, /contenteditable/i);
-  // única ação: limpar tudo (nada de editar, excluir ou "corrigir" um registro)
+  // os únicos campos são T1, T2 e T3, dentro do formulário de edição (o nome do aluno não é editável)
+  const formulario = (secao.match(/<form id="form-edicao"[\s\S]*?<\/form>/) || [])[0];
+  assert.ok(formulario, 'formulário de edição');
+  assert.deepEqual((secao.match(/<input\b[^>]*>/gi) || []).map((i) => atributo(i, 'id')), ['campo-edicao-t1', 'campo-edicao-t2', 'campo-edicao-t3']);
+  assert.deepEqual((formulario.match(/<input\b[^>]*>/gi) || []).length, 3);
+  assert.match(formulario, /\shidden(\s|>)/, 'o editor começa fechado');
+  // ações fixas: baixar o PDF, limpar tudo, salvar e cancelar a edição
   const botoes = secao.match(/<button\b[^>]*>/gi) || [];
-  // as únicas ações: baixar o resumo em PDF e limpar tudo
-  assert.deepEqual(botoes.map((b) => atributo(b, 'id')), ['botao-pdf', 'botao-limpar']);
+  assert.deepEqual(botoes.map((b) => atributo(b, 'id')), ['botao-pdf', 'botao-limpar', 'botao-salvar-edicao', 'botao-cancelar-edicao']);
   assert.match(botoes[0], /\sdisabled(\s|>|=)/, 'o botão de PDF começa desabilitado (não há alunos consultados)');
   const app = scripts['js/app.js'];
   assert.doesNotMatch(app, /createElement\(\s*['"](input|textarea|select)['"]/);
   assert.doesNotMatch(app, /contenteditable|isContentEditable|designMode/i);
+  assert.match(app, /data-editar/, 'cada linha da tabela tem o botão Editar');
   assert.doesNotMatch(css, /user-modify/);
 });
 
@@ -428,13 +435,14 @@ test('o foco não é movido sozinho para campos em telas de toque (teclado virtu
 
 // ---------- Ordem de foco e marcos de navegação ----------
 
-test('ordem de foco da Tela_do_Professor: aluno, T1, T2, T3, Calcular, PDF, Limpar e, por último, Trocar professor', () => {
+test('ordem de foco da Tela_do_Professor: aluno, T1, T2, T3, Calcular, PDF, Limpar, editor de notas e, por último, Trocar professor', () => {
   const tela = html.slice(html.indexOf('id="tela-professor"'), html.indexOf('</main>'));
   const foco = [...tela.matchAll(/<(button|input|select|textarea|a)\b[^>]*>/gi)].map((m) => {
     const id = atributo(m[0], 'id');
     return id || (atributo(m[0], 'type') === 'submit' ? 'submit-calcular' : m[1]);
   });
-  assert.deepEqual(foco, ['campo-media', 'campo-aluno', 'campo-t1', 'campo-t2', 'campo-t3', 'submit-calcular', 'botao-pdf', 'botao-limpar', 'botao-trocar']);
+  assert.deepEqual(foco, ['campo-media', 'campo-aluno', 'campo-t1', 'campo-t2', 'campo-t3', 'submit-calcular', 'botao-pdf', 'botao-limpar',
+    'campo-edicao-t1', 'campo-edicao-t2', 'campo-edicao-t3', 'botao-salvar-edicao', 'botao-cancelar-edicao', 'botao-trocar']);
 });
 
 test('nenhuma parada de foco extra: só o <main> aceita tabindex, e apenas -1', () => {

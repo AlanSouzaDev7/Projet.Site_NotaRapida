@@ -601,6 +601,50 @@
     return { estado: estado, evento: { tipo: 'IGNORADO' } };
   }
 
+  // Monta (e congela) o Lançamento a partir dos dados já validados: nome, notas
+  // (null = trimestre em branco) e média de aprovação. Serve ao cálculo novo e à
+  // correção de notas, então os dois chegam sempre ao mesmo resultado.
+  function montarLancamento(id, dados) {
+    var notas = dados.notas.slice();
+    var lancamento;
+    if (notas.indexOf(null) >= 0) {
+      var p = calcularParcial(notas, dados.mediaAprovacao);
+      lancamento = {
+        id: id,
+        parcial: true,
+        nomeAluno: dados.nomeAluno,
+        notas: notas,
+        mediaAprovacao: p.mediaAprovacao,
+        limites: p.limites,
+        faltantes: p.faltantes,
+        somaConhecida: p.somaConhecida,
+        mediaParcial: p.mediaParcial,
+        aprovacao: p.aprovacao,
+        acima: p.acima
+      };
+    } else {
+      var calculo = calcular(notas, dados.mediaAprovacao);
+      lancamento = {
+        id: id,
+        parcial: false,
+        nomeAluno: dados.nomeAluno,
+        notas: notas,
+        soma: calculo.soma,
+        mediaTruncada: calculo.mediaTruncada,
+        mediaAprovacao: calculo.mediaAprovacao,
+        classificacao: calculo.classificacao,
+        posicao: calculo.posicao
+      };
+    }
+    return congelarProfundo(lancamento);
+  }
+
+  function mesmasNotas(a, b) {
+    return a.length === b.length && a.every(function (nota, i) {
+      return nota === b[i];
+    });
+  }
+
   // Transição pura da sessão: devolve { estado, evento } sem mutar argumentos.
   function reduzir(estado, acao) {
     var tipo = acao && acao.tipo;
@@ -635,38 +679,7 @@
           }
         };
       }
-      var notas = validacao.dados.notas.slice();
-      var lancamento;
-      if (notas.indexOf(null) >= 0) {
-        var p = calcularParcial(notas, validacao.dados.mediaAprovacao);
-        lancamento = {
-          id: estado.proximoId,
-          parcial: true,
-          nomeAluno: validacao.dados.nomeAluno,
-          notas: notas,
-          mediaAprovacao: p.mediaAprovacao,
-          limites: p.limites,
-          faltantes: p.faltantes,
-          somaConhecida: p.somaConhecida,
-          mediaParcial: p.mediaParcial,
-          aprovacao: p.aprovacao,
-          acima: p.acima
-        };
-      } else {
-        var calculo = calcular(notas, validacao.dados.mediaAprovacao);
-        lancamento = {
-          id: estado.proximoId,
-          parcial: false,
-          nomeAluno: validacao.dados.nomeAluno,
-          notas: notas,
-          soma: calculo.soma,
-          mediaTruncada: calculo.mediaTruncada,
-          mediaAprovacao: calculo.mediaAprovacao,
-          classificacao: calculo.classificacao,
-          posicao: calculo.posicao
-        };
-      }
-      congelarProfundo(lancamento);
+      var lancamento = montarLancamento(estado.proximoId, validacao.dados);
       return {
         estado: comAlteracoes(estado, {
           resultado: lancamento,
@@ -674,6 +687,53 @@
           proximoId: estado.proximoId + 1
         }),
         evento: { tipo: 'CALCULO_CONCLUIDO', lancamento: lancamento }
+      };
+    }
+
+    // Corrige as notas de um aluno do histórico. O registro antigo nunca é alterado:
+    // entra um Lançamento novo (mesmo id e mesmo lugar na lista) e a lista é refeita.
+    if (tipo === 'EDITAR_LANCAMENTO') {
+      if (estado.tela !== 'professor') {
+        return ignorado(estado);
+      }
+      var posicao = -1;
+      estado.historico.forEach(function (registro, i) {
+        if (registro.id === acao.id) {
+          posicao = i;
+        }
+      });
+      if (posicao < 0) {
+        return ignorado(estado);
+      }
+      var antigo = estado.historico[posicao];
+      var novosCampos = acao.campos || {};
+      // Mesmas regras do formulário: o nome e a média de aprovação do registro entram
+      // como estão, e só T1, T2 e T3 mudam.
+      var edicao = validarFormulario({
+        media: formatarCentesimos(antigo.mediaAprovacao),
+        nomeAluno: antigo.nomeAluno,
+        t1: novosCampos.t1,
+        t2: novosCampos.t2,
+        t3: novosCampos.t3
+      });
+      if (!edicao.ok) {
+        return {
+          estado: estado,
+          evento: { tipo: 'EDICAO_INVALIDA', erros: edicao.erros, primeiroInvalido: edicao.primeiroInvalido }
+        };
+      }
+      if (mesmasNotas(edicao.dados.notas, antigo.notas)) {
+        return { estado: estado, evento: { tipo: 'EDICAO_SEM_ALTERACAO' } };
+      }
+      var corrigido = montarLancamento(antigo.id, edicao.dados);
+      var lista = estado.historico.slice();
+      lista[posicao] = corrigido;
+      return {
+        estado: comAlteracoes(estado, {
+          resultado: estado.resultado && estado.resultado.id === antigo.id ? corrigido : estado.resultado,
+          historico: Object.freeze(lista)
+        }),
+        evento: { tipo: 'LANCAMENTO_EDITADO', lancamento: corrigido, anterior: antigo }
       };
     }
 

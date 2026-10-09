@@ -279,10 +279,13 @@
     return isFinite(n) ? String(Math.round(n * 100) / 100) : '0';
   }
 
-  // '#RRGGBB' -> 'r g b' (0 a 1)
+  // '#RRGGBB' -> 'r g b' (0 a 1, três casas: o suficiente para não alterar a cor)
   function componentes(cor) {
     var v = parseInt(cor.slice(1), 16);
-    return num(((v >> 16) & 255) / 255) + ' ' + num(((v >> 8) & 255) / 255) + ' ' + num((v & 255) / 255);
+    function parte(x) {
+      return String(Math.round(x / 255 * 1000) / 1000);
+    }
+    return parte((v >> 16) & 255) + ' ' + parte((v >> 8) & 255) + ' ' + parte(v & 255);
   }
 
   function retangulo(pagina, x, topo, largura, altura, cor) {
@@ -368,6 +371,161 @@
       }
       texto(pagina, x + 11, topo + 31, codificar(c.rotulo), 8, false, COR_SUAVE);
     });
+  }
+
+  // ---------- Gráficos da turma (pizza e barras, lado a lado) ----------
+
+  var ALTURA_GRAFICOS = 266;
+  var FOLGA_PAINEIS = 13;
+  var LARGURA_PAINEL = (LARGURA_UTIL - FOLGA_PAINEIS) / 2;
+  var ALTURA_PAINEL = 150;
+
+  function alunosTexto(n) {
+    return n + (n === 1 ? ' aluno' : ' alunos');
+  }
+
+  // Percentual com até uma casa e vírgula ("26,5%", "50%"): grupos do mesmo tamanho mostram
+  // sempre o mesmo valor (arredondar para somar 100 daria 27% e 26% para dois grupos iguais).
+  function formatarPercentual(valor, total) {
+    if (total <= 0) {
+      return '0%';
+    }
+    var p = Math.round(valor * 1000 / total) / 10;
+    return String(p).replace('.', ',') + '%';
+  }
+
+  // Passo do eixo das barras: no máximo 5 divisões, com números redondos.
+  function passoDoEixo(maximo) {
+    var passos = [1, 2, 5, 10, 20, 50, 100, 200, 500, 1000];
+    for (var i = 0; i < passos.length; i += 1) {
+      if (Math.ceil(maximo / passos[i]) <= 5) {
+        return passos[i];
+      }
+    }
+    return passos[passos.length - 1];
+  }
+
+  // Uma fatia da pizza: `de` e `ate` são frações da volta, no sentido horário a partir do topo.
+  // O PDF não tem arco: cada trecho de até 90 graus vira uma curva de Bézier.
+  function fatia(pagina, cx, topoCy, raio, de, ate, cor) {
+    var cy = ALTURA_PAGINA - topoCy;
+    var inteiro = ate - de >= 0.99999;
+    var a0 = Math.PI / 2 - 2 * Math.PI * de;
+    var total = -2 * Math.PI * (ate - de);
+    var partes = Math.max(1, Math.ceil(Math.abs(total) / (Math.PI / 2) - 1e-9));
+    var passo = total / partes;
+    var k = 4 / 3 * Math.tan(passo / 4);
+    var ops = [componentes(cor) + ' rg ' + componentes('#FFFFFF') + ' RG 1.2 w'];
+    var x = cx + raio * Math.cos(a0);
+    var y = cy + raio * Math.sin(a0);
+    ops.push(inteiro ? num(x) + ' ' + num(y) + ' m' : num(cx) + ' ' + num(cy) + ' m ' + num(x) + ' ' + num(y) + ' l');
+    for (var i = 0; i < partes; i += 1) {
+      var a = a0 + passo * i;
+      var b = a + passo;
+      ops.push(num(cx + raio * (Math.cos(a) - k * Math.sin(a))) + ' ' + num(cy + raio * (Math.sin(a) + k * Math.cos(a))) + ' ' +
+        num(cx + raio * (Math.cos(b) + k * Math.sin(b))) + ' ' + num(cy + raio * (Math.sin(b) - k * Math.cos(b))) + ' ' +
+        num(cx + raio * Math.cos(b)) + ' ' + num(cy + raio * Math.sin(b)) + ' c');
+    }
+    ops.push('h B');
+    pagina.push(ops.join(' '));
+  }
+
+  function painel(pagina, x, topo, titulo, tema) {
+    retangulo(pagina, x, topo, LARGURA_PAINEL, ALTURA_PAINEL, tema.suave);
+    retangulo(pagina, x, topo, LARGURA_PAINEL, 2, tema.escura);
+    texto(pagina, x + 12, topo + 11, codificar(titulo), 8.5, true, COR_TEXTO);
+  }
+
+  // dados: [{ rotulo, valor, cor }] na ordem aprovados, reprovados, em andamento.
+  function graficoDePizza(pagina, x, topo, dados, total, tema) {
+    painel(pagina, x, topo, 'Pizza: situação dos alunos', tema);
+    var raio = 50;
+    var cx = x + 14 + raio;
+    var cy = topo + 34 + raio;
+    var inicio = 0;
+    dados.forEach(function (d) {
+      if (d.valor > 0) {
+        var fim = inicio + d.valor / total;
+        fatia(pagina, cx, cy, raio, inicio, Math.min(fim, 1), d.cor);
+        inicio = fim;
+      }
+    });
+    dados.forEach(function (d, i) {
+      var y = topo + 46 + i * 31;
+      retangulo(pagina, x + 130, y + 1, 8, 8, d.cor);
+      texto(pagina, x + 143, y, codificar(d.rotulo), 8.5, true, COR_TEXTO);
+      texto(pagina, x + 143, y + 11, codificar(alunosTexto(d.valor) + '  ·  ' + formatarPercentual(d.valor, total)), 8, false, COR_SUAVE);
+    });
+  }
+
+  function graficoDeBarras(pagina, x, topo, dados, tema) {
+    painel(pagina, x, topo, 'Barras: alunos por situação', tema);
+    var maximo = 0;
+    dados.forEach(function (d) {
+      maximo = Math.max(maximo, d.valor);
+    });
+    var passo = passoDoEixo(Math.max(maximo, 1));
+    var eixo = Math.max(1, Math.ceil(maximo / passo)) * passo;
+    var esquerda = x + 34;
+    var largura = LARGURA_PAINEL - 34 - 12;
+    var cima = topo + 42;
+    var altura = 74;
+    for (var v = 0; v <= eixo; v += passo) {
+      var y = cima + altura - altura * v / eixo;
+      linhaHorizontal(pagina, esquerda, esquerda + largura, y, v === 0 ? COR_SUAVE : COR_BORDA, v === 0 ? 0.8 : 0.5);
+      textoAlinhado(pagina, 'direita', x + 6, 22, y - 3.5, codificar(String(v)), 7, false, COR_SUAVE);
+    }
+    var faixa = largura / dados.length;
+    var larguraBarra = Math.min(40, faixa * 0.55);
+    dados.forEach(function (d, i) {
+      var h = altura * d.valor / eixo;
+      var bx = esquerda + faixa * i + (faixa - larguraBarra) / 2;
+      if (h > 0) {
+        retangulo(pagina, bx, cima + altura - h, larguraBarra, h, d.cor);
+      }
+      textoAlinhado(pagina, 'centro', bx - 10, larguraBarra + 20, cima + altura - h - 12, codificar(String(d.valor)), 9, true, COR_TEXTO);
+      textoAlinhado(pagina, 'centro', esquerda + faixa * i, faixa, cima + altura + 6, codificar(d.rotulo), 8, false, COR_TEXTO);
+    });
+  }
+
+  // Média da turma (barra de 0 a 10) e, logo abaixo, a pizza e as barras lado a lado.
+  // Os alunos em andamento entram nos dois gráficos; só a média os deixa de fora, porque
+  // ainda não têm as três notas (a mesma regra da "Média do grupo" da tela).
+  function graficosDaTurma(pagina, topo, resumo, tema) {
+    var completos = resumo.aprovados + resumo.reprovados;
+    texto(pagina, MARGEM, topo, codificar('Visão geral da turma'), 12, true, tema.escura);
+    texto(pagina, MARGEM, topo + 17, codificar('Situação dos ' + alunosTexto(resumo.total) + ' consultados, incluindo os que ainda estão em andamento.'), 8, false, COR_SUAVE);
+
+    var faixaTopo = topo + 34;
+    retangulo(pagina, MARGEM, faixaTopo, LARGURA_UTIL, 52, tema.suave);
+    retangulo(pagina, MARGEM, faixaTopo, 3, 52, tema.escura);
+    texto(pagina, MARGEM + 14, faixaTopo + 8, codificar('Média da turma'), 8, false, COR_SUAVE);
+    texto(pagina, MARGEM + 14, faixaTopo + 20, codificar(resumo.mediaGrupo === null ? '—' : N.formatarCentesimos(resumo.mediaGrupo)), 20, true, tema.escura);
+    if (resumo.mediaGrupo !== null) {
+      var gx = MARGEM + 150;
+      var gl = LARGURA_UTIL - 150 - 16;
+      retangulo(pagina, gx, faixaTopo + 15, gl, 10, COR_BORDA);
+      retangulo(pagina, gx, faixaTopo + 15, gl * Math.min(resumo.mediaGrupo, 1000) / 1000, 10, tema.escura);
+      [0, 5, 10].forEach(function (marca) {
+        textoAlinhado(pagina, 'centro', gx + gl * marca / 10 - 10, 20, faixaTopo + 29, codificar(String(marca)), 7, false, COR_SUAVE);
+      });
+    } else {
+      texto(pagina, MARGEM + 150, faixaTopo + 20, codificar('Ainda não há aluno com as três notas lançadas.'), 8.5, false, COR_SUAVE);
+    }
+    var nota = completos > 0
+      ? 'Média de ' + alunosTexto(completos) + ' com as três notas lançadas.' +
+        (resumo.emAndamento > 0 ? ' Alunos em andamento (' + resumo.emAndamento + ') aparecem nos gráficos, mas ainda não entram na média.' : '')
+      : 'Todos os ' + alunosTexto(resumo.total) + ' consultados estão em andamento e aparecem nos gráficos.';
+    texto(pagina, MARGEM, faixaTopo + 58, codificar(nota), 7.5, false, COR_SUAVE);
+
+    var dados = [
+      { rotulo: 'Aprovados', valor: resumo.aprovados, cor: COR_APROVADO },
+      { rotulo: 'Reprovados', valor: resumo.reprovados, cor: COR_REPROVADO },
+      { rotulo: 'Em andamento', valor: resumo.emAndamento, cor: COR_ANDAMENTO }
+    ];
+    var painelTopo = faixaTopo + 76;
+    graficoDePizza(pagina, MARGEM, painelTopo, dados, resumo.total, tema);
+    graficoDeBarras(pagina, MARGEM + LARGURA_PAINEL + FOLGA_PAINEIS, painelTopo, dados, tema);
   }
 
   // ---------- Tabela ----------
@@ -556,9 +714,10 @@
 
     var paginas = [];
     var pagina = [];
+    var resumo = N.resumirHistorico(lista);
     cabecalhoPrimeiraPagina(pagina, tema, data);
-    cartoesDeResumo(pagina, 86, N.resumirHistorico(lista), tema);
-    texto(pagina, MARGEM, 143, codificar('Do mais recente para o mais antigo. Registros somente para leitura.'), 8, false, COR_SUAVE);
+    cartoesDeResumo(pagina, 86, resumo, tema);
+    texto(pagina, MARGEM, 143, codificar('Do mais recente para o mais antigo.'), 8, false, COR_SUAVE);
     texto(pagina, MARGEM, 154, codificar('A média do grupo considera só os alunos com as três notas lançadas; alunos em andamento não entram na conta.'), 8, false, COR_SUAVE);
     var topo = 170;
     cabecalhoDaTabela(pagina, topo, tema);
@@ -577,6 +736,16 @@
       desenharLinha(pagina, topo, medida, i % 2 === 1, tema);
       topo += medida.altura;
     });
+
+    // No fim do documento: média da turma e os gráficos (numa página nova se não couberem).
+    topo += 22;
+    if (topo + ALTURA_GRAFICOS > LIMITE_TOPO) {
+      paginas.push(pagina);
+      pagina = [];
+      cabecalhoContinuacao(pagina, tema);
+      topo = 52;
+    }
+    graficosDaTurma(pagina, topo, resumo, tema);
     paginas.push(pagina);
 
     paginas.forEach(function (operacoes, i) {
@@ -596,6 +765,7 @@
     gerarResumo: gerarResumo,
     nomeDoArquivo: nomeDoArquivo,
     codificar: codificar,
-    medirLinhas: medirLinhas
+    medirLinhas: medirLinhas,
+    formatarPercentual: formatarPercentual
   });
 });
