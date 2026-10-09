@@ -125,17 +125,17 @@ function campos(aluno, [a, b, c], m) {
   };
 }
 
-test('histórico = min(N, 20) lançamentos mais recentes, do mais novo ao mais antigo', () => {
-  assert.equal(N.constantes.TAMANHO_HISTORICO, 20);
-  fc.assert(fc.property(fc.array(fc.tuple(tresNotas, mediaM), { maxLength: 45 }), (lista) => {
+test('histórico = min(N, 35) lançamentos mais recentes, do mais novo ao mais antigo', () => {
+  assert.equal(N.constantes.TAMANHO_HISTORICO, 35);
+  fc.assert(fc.property(fc.array(fc.tuple(tresNotas, mediaM), { maxLength: 80 }), (lista) => {
     let e = entrar('Ana');
     lista.forEach(([n, m], i) => {
       e = N.reduzir(e, { tipo: 'CALCULAR', campos: campos('Aluno ' + i, n, m) }).estado;
     });
-    const esperado = lista.map((_, i) => i).reverse().slice(0, 20);
+    const esperado = lista.map((_, i) => i).reverse().slice(0, 35);
     assert.deepEqual(e.historico.map((l) => l.id), esperado);
     assert.deepEqual(e.historico.map((l) => l.nomeAluno), esperado.map((i) => 'Aluno ' + i));
-    assert.equal(e.historico.length, Math.min(lista.length, 20));
+    assert.equal(e.historico.length, Math.min(lista.length, 35));
   }), RUNS);
 });
 

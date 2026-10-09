@@ -98,7 +98,7 @@ function visitasEmOutroProcesso(porta, n) {
 
 test('serve exatamente os arquivos públicos de site/ (sem _headers, ocultos nem diretórios)', () => {
   const rotas = [...carregarSite(SITE).keys()].sort();
-  assert.deepEqual(rotas, ['/', '/ai.txt', '/css/estilo.css', '/img/icone.svg', '/img/ilustracao.svg', '/index.html', '/js/app.js', '/js/notas.js', '/robots.txt']);
+  assert.deepEqual(rotas, ['/', '/ai.txt', '/css/estilo.css', '/img/icone.svg', '/img/ilustracao.svg', '/index.html', '/js/app.js', '/js/notas.js', '/js/pdf.js', '/robots.txt']);
 });
 
 test('arquivos fora de site/ e de configuração não são servidos, em nenhuma grafia de caminho', async () => {

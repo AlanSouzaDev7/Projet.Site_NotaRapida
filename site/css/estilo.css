@@ -832,8 +832,8 @@ html.em-quadro noscript {
   }
 }
 
-.botao--primario:active,
-.botao--secundario:active {
+.botao--primario:not(:disabled):active,
+.botao--secundario:not(:disabled):active {
   transform: translateY(1px);
 }
 
@@ -843,11 +843,20 @@ html.em-quadro noscript {
 }
 
 @media (hover: hover) {
-  .botao--secundario:hover {
+  .botao--secundario:not(:disabled):hover {
     color: var(--cor-destaque);
     background: var(--cor-destaque-suave);
     border-color: var(--cor-destaque);
   }
+}
+
+/* Sem alunos consultados não há o que baixar: o botão fica apagado, sem hover nem clique. */
+.botao:disabled {
+  color: var(--cor-texto-suave);
+  background: var(--cor-superficie-funda);
+  border-color: var(--cor-borda);
+  box-shadow: none;
+  cursor: not-allowed;
 }
 
 .botao:focus {

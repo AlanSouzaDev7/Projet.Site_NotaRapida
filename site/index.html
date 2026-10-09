@@ -17,6 +17,7 @@
   <link rel="icon" href="img/icone.svg" type="image/svg+xml">
   <link rel="stylesheet" href="css/estilo.css">
   <script src="js/notas.js" defer></script>
+  <script src="js/pdf.js" defer></script>
   <script src="js/app.js" defer></script>
 </head>
 <body class="tema--neutro">
@@ -32,6 +33,7 @@
     <symbol id="i-livro" viewBox="0 0 24 24"><path d="M12 6.500C10.500 5 8 4.500 4 4.500v13c4 0 6.500.5 8 2 1.500-1.500 4-2 8-2v-13c-4 0-6.500.5-8 2zM12 6.500v13"/></symbol>
     <symbol id="i-estrela" viewBox="0 0 24 24"><path d="M12 3l2.700 5.600 6.100.9-4.400 4.300 1 6.100L12 17l-5.400 2.900 1-6.100L3.200 9.500l6.100-.9z"/></symbol>
     <symbol id="i-lixeira" viewBox="0 0 24 24"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3"/></symbol>
+    <symbol id="i-pdf" viewBox="0 0 24 24"><path d="M6 3h8l4 4v14H6zM14 3v4h4M12 11v6M9.500 14.500 12 17l2.500-2.500"/></symbol>
   </svg>
 
   <noscript><p class="aviso-noscript">Ative o JavaScript para usar o NotaRápida.</p></noscript>
@@ -70,7 +72,7 @@
               </li>
               <li class="beneficio">
                 <svg class="icone" aria-hidden="true" focusable="false"><use href="#i-lista"/></svg>
-                <span><strong>Últimos 20 alunos consultados.</strong> Consulte as notas recentes, somente para leitura.</span>
+                <span><strong>Últimos 35 alunos consultados.</strong> Consulte as notas recentes, somente para leitura, e baixe um resumo em PDF.</span>
               </li>
               <li class="beneficio">
                 <svg class="icone" aria-hidden="true" focusable="false"><use href="#i-escudo"/></svg>
@@ -144,7 +146,7 @@
             <div class="cabecalho__texto">
               <p id="saudacao-periodo" class="cabecalho__kicker"></p>
               <h1 id="saudacao" class="saudacao"></h1>
-              <p class="cabecalho__subtitulo">Lance as notas de T1, T2 e T3 e acompanhe os últimos 20 alunos consultados.</p>
+              <p class="cabecalho__subtitulo">Lance as notas de T1, T2 e T3 e acompanhe os últimos 35 alunos consultados.</p>
             </div>
             <aside class="lousa" aria-labelledby="titulo-recado">
               <h2 id="titulo-recado" class="lousa__titulo">
@@ -161,7 +163,7 @@
 
         <p class="aviso-dados">
           <svg class="icone" aria-hidden="true" focusable="false"><use href="#i-cadeado"/></svg>
-          <span><strong>Nada é salvo.</strong> O nome do professor, os nomes dos alunos e as notas ficam apenas nesta aba e são apagados ao trocar de professor, recarregar ou fechar a página. Apenas os 20 últimos alunos consultados aparecem, e esses registros são somente para leitura.</span>
+          <span><strong>Nada é salvo.</strong> O nome do professor, os nomes dos alunos e as notas ficam apenas nesta aba e são apagados ao trocar de professor, recarregar ou fechar a página. Apenas os 35 últimos alunos consultados aparecem, e esses registros são somente para leitura. O resumo em PDF só existe se você o baixar: o arquivo fica no seu dispositivo, fora do NotaRápida.</span>
         </p>
 
         <div class="grade">
@@ -287,7 +289,7 @@
               <div class="painel__cabeca">
                 <span class="painel__numero" aria-hidden="true">3</span>
                 <div>
-                  <h2 id="titulo-historico" class="painel__titulo">Últimos 20 alunos consultados</h2>
+                  <h2 id="titulo-historico" class="painel__titulo">Últimos 35 alunos consultados</h2>
                   <p class="painel__descricao">Do mais recente para o mais antigo. Os registros não podem ser editados: para corrigir uma nota, faça um novo cálculo.</p>
                 </div>
               </div>
@@ -296,6 +298,10 @@
                   <svg class="icone" aria-hidden="true" focusable="false"><use href="#i-cadeado"/></svg>
                   Somente leitura
                 </span>
+                <button type="button" id="botao-pdf" class="botao botao--secundario" disabled>
+                  <svg class="icone" aria-hidden="true" focusable="false"><use href="#i-pdf"/></svg>
+                  <span>Baixar resumo em PDF</span>
+                </button>
                 <button type="button" id="botao-limpar" class="botao botao--secundario">
                   <svg class="icone" aria-hidden="true" focusable="false"><use href="#i-lixeira"/></svg>
                   <span>Limpar histórico</span>
@@ -304,7 +310,7 @@
             </div>
 
             <dl id="resumo" class="resumo" hidden>
-              <div class="resumo__item"><dt>Consultados</dt><dd><span id="sum-total"></span><span class="resumo__de"> de 20</span></dd></div>
+              <div class="resumo__item"><dt>Consultados</dt><dd><span id="sum-total"></span><span class="resumo__de"> de 35</span></dd></div>
               <div class="resumo__item resumo__item--aprovado"><dt>Aprovados</dt><dd id="sum-aprovados"></dd></div>
               <div class="resumo__item resumo__item--reprovado"><dt>Reprovados</dt><dd id="sum-reprovados"></dd></div>
               <div class="resumo__item resumo__item--andamento"><dt>Em andamento</dt><dd id="sum-andamento"></dd></div>

@@ -1,6 +1,6 @@
 'use strict';
 
-// Histórico dos 20 últimos alunos consultados: somente leitura, resumo e faixas.
+// Histórico dos 35 últimos alunos consultados: somente leitura, resumo e faixas.
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fc = require('fast-check');
@@ -29,15 +29,15 @@ function profundamenteCongelado(valor) {
 
 // ---------- Somente leitura ----------
 
-test('o histórico guarda os 20 últimos alunos consultados', () => {
-  assert.equal(N.constantes.TAMANHO_HISTORICO, 20);
+test('o histórico guarda os 35 últimos alunos consultados', () => {
+  assert.equal(N.constantes.TAMANHO_HISTORICO, 35);
   let e = entrar();
-  for (let i = 0; i < 25; i += 1) {
+  for (let i = 0; i < 40; i += 1) {
     e = calcular(e, 'Aluno ' + i, [700, 800, 900], 600);
   }
-  assert.equal(e.historico.length, 20);
-  assert.equal(e.historico[0].nomeAluno, 'Aluno 24');
-  assert.equal(e.historico[19].nomeAluno, 'Aluno 5');
+  assert.equal(e.historico.length, 35);
+  assert.equal(e.historico[0].nomeAluno, 'Aluno 39');
+  assert.equal(e.historico[34].nomeAluno, 'Aluno 5');
 });
 
 test('lançamentos completos e parciais ficam congelados por inteiro', () => {
@@ -81,7 +81,7 @@ test('lançamento parcial: metas e faltantes também são somente leitura', () =
 });
 
 test('um novo cálculo não altera os lançamentos anteriores', () => {
-  fc.assert(fc.property(fc.array(fc.tuple(nota, nota, nota), { minLength: 1, maxLength: 30 }), (lista) => {
+  fc.assert(fc.property(fc.array(fc.tuple(nota, nota, nota), { minLength: 1, maxLength: 60 }), (lista) => {
     let e = entrar();
     const registros = [];
     lista.forEach((n, i) => {
@@ -89,7 +89,7 @@ test('um novo cálculo não altera os lançamentos anteriores', () => {
       registros.push(e.historico[0]);
     });
     const vistos = e.historico.map((l) => l.id);
-    registros.slice(-20).reverse().forEach((l, i) => {
+    registros.slice(-N.constantes.TAMANHO_HISTORICO).reverse().forEach((l, i) => {
       assert.equal(e.historico[i], l, 'mesma referência, sem cópia alterada');
       assert.equal(l.id, vistos[i]);
     });

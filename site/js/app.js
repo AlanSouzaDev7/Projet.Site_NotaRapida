@@ -70,6 +70,11 @@
   var animHistorico = null;
   var anuncioPendente = 0;
   var mediaDaLegenda = null;
+  // Endereço temporário (blob:) do último PDF gerado, só em memória; é liberado
+  // ao esvaziar o histórico, trocar de professor, sair da página ou após 1 minuto.
+  var urlDoPdf = '';
+  var temporizadorPdf = 0;
+  var TEMPO_DO_PDF = 60000;
 
   function el(id) {
     return document.getElementById(id);
@@ -126,6 +131,7 @@
     refs.resMetaAcima = el('res-meta-acima');
     refs.resMensagem = el('res-mensagem');
     refs.botaoLimpar = el('botao-limpar');
+    refs.botaoPdf = el('botao-pdf');
     refs.historicoVazio = el('historico-vazio');
     refs.historicoTabela = el('historico-tabela');
     refs.historicoCorpo = el('historico-corpo');
@@ -563,10 +569,22 @@
     var vazio = r.total === 0;
     refs.resumo.hidden = vazio;
     refs.resumoNota.hidden = vazio;
+    refs.botaoPdf.disabled = vazio; // sem alunos consultados não há o que resumir
+  }
+
+  // Descarta o endereço temporário do PDF: o arquivo some da memória da aba.
+  function liberarPdf() {
+    window.clearTimeout(temporizadorPdf);
+    temporizadorPdf = 0;
+    if (urlDoPdf) {
+      window.URL.revokeObjectURL(urlDoPdf);
+      urlDoPdf = '';
+    }
   }
 
   // Esvazia a tabela e o resumo (limpar o histórico, trocar de professor).
   function esvaziarHistorico() {
+    liberarPdf();
     refs.historicoCorpo.replaceChildren();
     refs.historicoTabela.hidden = true;
     refs.historicoVazio.hidden = false;
@@ -789,6 +807,42 @@
     });
   }
 
+  // Gera o resumo em PDF a partir do histórico em memória (estado.historico, a
+  // fonte dos dados; a tabela da tela é só uma cópia para exibição) e o entrega
+  // como download. Nada é enviado, gravado ou aberto em outra janela.
+  function aoBaixarPdf() {
+    var lista = estado.historico;
+    if (estado.tela !== 'professor' || lista.length === 0) {
+      return;
+    }
+    var gerador = window.NotaRapidaPdf;
+    var bytes = null;
+    var possivel = gerador && typeof window.Blob === 'function' && window.URL && typeof window.URL.createObjectURL === 'function';
+    if (possivel) {
+      try {
+        bytes = gerador.gerarResumo({ lancamentos: lista, geradoEm: new Date(), tema: estado.tratamento });
+      } catch (erro) {
+        bytes = null;
+      }
+    }
+    if (!bytes) {
+      anunciar('Não foi possível gerar o PDF neste navegador.');
+      return;
+    }
+    liberarPdf();
+    urlDoPdf = window.URL.createObjectURL(new window.Blob([bytes], { type: 'application/pdf' }));
+    var link = document.createElement('a');
+    link.href = urlDoPdf;
+    link.download = gerador.nomeDoArquivo(new Date());
+    link.hidden = true;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    temporizadorPdf = window.setTimeout(liberarPdf, TEMPO_DO_PDF);
+    anunciar('PDF gerado com ' + lista.length + (lista.length === 1 ? ' aluno' : ' alunos') +
+      '. O arquivo foi baixado no seu dispositivo.');
+  }
+
   function aoTrocarProfessor() {
     if (transicao.emCurso && transicao.destino === 'inicial') {
       return; // acionamento repetido durante a própria transição (Req. 12.4)
@@ -866,6 +920,7 @@
     refs.formNotas.addEventListener('submit', aoEnviarNotas);
     refs.campos.media.addEventListener('input', aoDigitarMedia);
     refs.botaoLimpar.addEventListener('click', aoLimparHistorico);
+    refs.botaoPdf.addEventListener('click', aoBaixarPdf);
     refs.botaoTrocar.addEventListener('click', aoTrocarProfessor);
 
     window.addEventListener('pagehide', function () {

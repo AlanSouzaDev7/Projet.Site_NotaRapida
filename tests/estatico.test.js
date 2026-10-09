@@ -14,7 +14,7 @@ const ler = (rel) => fs.readFileSync(path.join(SITE, rel), 'utf8').replace(/\r\n
 const htmlBruto = ler('index.html');
 const html = htmlBruto.replace(/<!--[\s\S]*?-->/g, ''); // sem comentários
 const css = ler('css/estilo.css');
-const scripts = { 'js/notas.js': ler('js/notas.js'), 'js/app.js': ler('js/app.js') };
+const scripts = { 'js/notas.js': ler('js/notas.js'), 'js/pdf.js': ler('js/pdf.js'), 'js/app.js': ler('js/app.js') };
 
 function tags(nome) {
   return html.match(new RegExp('<' + nome + '\\b[^>]*>', 'gi')) || [];
@@ -81,7 +81,7 @@ test('HTML sem script inline, on*=, style= nem <style>', () => {
     assert.match(s, /^<script\b[^>]*\ssrc="[^"]+"[^>]*><\/script>$/i, 'script deve ter src e corpo vazio');
     assert.doesNotMatch(s, /type\s*=\s*"module"/i);
   }
-  assert.deepEqual(tags('script').map((t) => atributo(t, 'src')), ['js/notas.js', 'js/app.js']);
+  assert.deepEqual(tags('script').map((t) => atributo(t, 'src')), ['js/notas.js', 'js/pdf.js', 'js/app.js']);
   assert.doesNotMatch(html, /<[^>]*\son[a-z]+\s*=/i);
   assert.doesNotMatch(html, /<[^>]*\sstyle\s*=/i);
   assert.doesNotMatch(html, /<style\b/i);
@@ -273,16 +273,18 @@ test('nenhum símbolo oficial: sem brasão, sem logomarca do governo, só imagen
   assert.doesNotMatch(titulo, /governo|rio de janeiro|\.gov/i);
 });
 
-test('histórico dos 20 últimos alunos: somente leitura, sem campo editável', () => {
+test('histórico dos 35 últimos alunos: somente leitura, sem campo editável', () => {
   const secao = (html.match(/<section class="cartao painel-historico"[\s\S]*?<\/section>/) || [])[0];
   assert.ok(secao, 'seção do histórico');
-  assert.match(secao, /Últimos 20 alunos consultados/);
+  assert.match(secao, /Últimos 35 alunos consultados/);
   assert.match(secao, /Somente leitura/);
   assert.doesNotMatch(secao, /<(input|textarea|select)\b/i);
   assert.doesNotMatch(secao, /contenteditable/i);
   // única ação: limpar tudo (nada de editar, excluir ou "corrigir" um registro)
   const botoes = secao.match(/<button\b[^>]*>/gi) || [];
-  assert.deepEqual(botoes.map((b) => atributo(b, 'id')), ['botao-limpar']);
+  // as únicas ações: baixar o resumo em PDF e limpar tudo
+  assert.deepEqual(botoes.map((b) => atributo(b, 'id')), ['botao-pdf', 'botao-limpar']);
+  assert.match(botoes[0], /\sdisabled(\s|>|=)/, 'o botão de PDF começa desabilitado (não há alunos consultados)');
   const app = scripts['js/app.js'];
   assert.doesNotMatch(app, /createElement\(\s*['"](input|textarea|select)['"]/);
   assert.doesNotMatch(app, /contenteditable|isContentEditable|designMode/i);
@@ -298,7 +300,7 @@ test('todo ícone <use href="#…"> aponta para um símbolo do sprite', () => {
   }
 });
 
-test('o texto da interface cita os mesmos 20 alunos que a lógica guarda', () => {
+test('o texto da interface cita os mesmos 35 alunos que a lógica guarda', () => {
   const N = require('../site/js/notas.js');
   const total = String(N.constantes.TAMANHO_HISTORICO);
   assert.match(html, new RegExp('Últimos ' + total + ' alunos consultados'));
@@ -426,13 +428,13 @@ test('o foco não é movido sozinho para campos em telas de toque (teclado virtu
 
 // ---------- Ordem de foco e marcos de navegação ----------
 
-test('ordem de foco da Tela_do_Professor: aluno, T1, T2, T3, Calcular, Limpar e, por último, Trocar professor', () => {
+test('ordem de foco da Tela_do_Professor: aluno, T1, T2, T3, Calcular, PDF, Limpar e, por último, Trocar professor', () => {
   const tela = html.slice(html.indexOf('id="tela-professor"'), html.indexOf('</main>'));
   const foco = [...tela.matchAll(/<(button|input|select|textarea|a)\b[^>]*>/gi)].map((m) => {
     const id = atributo(m[0], 'id');
     return id || (atributo(m[0], 'type') === 'submit' ? 'submit-calcular' : m[1]);
   });
-  assert.deepEqual(foco, ['campo-media', 'campo-aluno', 'campo-t1', 'campo-t2', 'campo-t3', 'submit-calcular', 'botao-limpar', 'botao-trocar']);
+  assert.deepEqual(foco, ['campo-media', 'campo-aluno', 'campo-t1', 'campo-t2', 'campo-t3', 'submit-calcular', 'botao-pdf', 'botao-limpar', 'botao-trocar']);
 });
 
 test('nenhuma parada de foco extra: só o <main> aceita tabindex, e apenas -1', () => {

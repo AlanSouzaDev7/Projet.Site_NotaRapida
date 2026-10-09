@@ -18,7 +18,7 @@
   // Mesmo valor do atributo maxlength dos campos (vale mesmo se o atributo for removido).
   var LIMITE_CAMPO = 1000;
   // Últimos alunos consultados que permanecem visíveis (somente leitura).
-  var TAMANHO_HISTORICO = 20;
+  var TAMANHO_HISTORICO = 35;
   // Limites da soma para a média padrão (M = 600): 3·600, 3·800 e 3·900.
   var LIMITES_SOMA = Object.freeze({ NA_MEDIA: 1800, ACIMA: 2400, EXCELENTE: 2700 });
   var MEDIA_PADRAO = 600;
