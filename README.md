@@ -2,9 +2,9 @@
 
 **Acesse o site: [alansouzadev7.github.io/Projet.Site_NotaRapida](https://alansouzadev7.github.io/Projet.Site_NotaRapida/)**
 
-Site de uma página para calcular a média trimestral de alunos: o professor informa o nome, lança o nome do aluno e as notas T1, T2 e T3 e vê a média final, a situação (aprovado ou reprovado), a posição em relação à média e a lista dos **20 últimos alunos consultados**. Com trimestres em branco, mostra quanto falta para a aprovação e para ficar acima da média.
+Site de uma página para calcular a média trimestral de alunos: o professor informa o nome, lança o nome do aluno e as notas T1, T2 e T3 e vê a média final, a situação (aprovado ou reprovado), a posição em relação à média e a lista dos **35 últimos alunos consultados**, que podem ser corrigidos e resumidos em um PDF. Com trimestres em branco, mostra quanto falta para a aprovação e para ficar acima da média.
 
-Tudo roda no navegador, em HTML, CSS e JavaScript puro. Não há servidor de aplicação, conta, senha, cookies nem armazenamento: os dados ficam só na memória da aba e somem ao trocar de professor, recarregar ou fechar a página. A entrada pelo nome do professor **não é autenticação**, apenas personalização.
+Tudo roda no navegador, em HTML, CSS e JavaScript puro. Não há servidor de aplicação, conta, senha, cookies nem armazenamento: os dados ficam só na memória da aba e somem ao trocar de professor, recarregar ou fechar a página; a única coisa que sai da aba é o PDF que você mesmo escolhe baixar (veja [Resumo em PDF](#resumo-em-pdf)). A entrada pelo nome do professor **não é autenticação**, apenas personalização.
 
 Evolução do script `AulaPython-TRABALHOCONCLUIDO.py` (três trimestres em vez de quatro bimestres, com as faixas de classificação corrigidas).
 
@@ -16,9 +16,27 @@ Evolução do script `AulaPython-TRABALHOCONCLUIDO.py` (três trimestres em vez 
 - **Cabeçalho:** saudação por período do dia, data por extenso e um recado do dia (Paulo Freire, Rubem Alves, Cora Coralina e dois textos próprios). No dia 15 de outubro, aparece uma homenagem pelo Dia do Professor.
 - **1. Lançar notas:** média para aprovação (6,00 por padrão, de 1 a 10), com as faixas de classificação mostradas na hora; nome do aluno; T1, T2 e T3 (vírgula ou ponto; vazio vale como trimestre ainda sem nota).
 - **2. Resultado:** média final, situação, posição em relação à média, régua com as faixas, carimbo e mensagem. Com trimestres em branco: média parcial e a nota necessária em cada trimestre que falta.
-- **3. Últimos 20 alunos consultados:** do mais recente para o mais antigo, com resumo (aprovados, reprovados, em andamento e média do grupo). É **somente leitura**: não há campo editável, os registros ficam congelados na memória e, para corrigir uma nota, basta calcular de novo. "Limpar histórico" é o único botão da lista.
+- **3. Últimos 35 alunos consultados:** do mais recente para o mais antigo, com resumo (aprovados, reprovados, em andamento e média do grupo). Cada linha tem o botão **Editar** (corrigir T1, T2 e T3); no topo do cartão ficam **Baixar resumo em PDF** e **Limpar histórico**.
 
 Em telas estreitas (celulares) a tabela vira uma lista de fichas, uma por aluno.
+
+### Corrigir uma nota
+
+**Editar** abre um editor acima da tabela com as notas do aluno e a linha fica destacada. As regras são as do formulário: nota inválida mostra o erro no campo, trimestre em branco vira resultado em andamento e as três em branco são recusadas. Ao **Salvar alterações**, a média, a situação, o resumo do histórico e o painel de resultado (se ele mostrava esse aluno) são recalculados. Só T1, T2 e T3 mudam: o nome e a média de aprovação do aluno ficam como estão.
+
+**Cancelar** (ou a tecla Escape) descarta a correção, e o foco volta ao botão Editar da linha. O editor também fecha sozinho se você limpar o histórico, trocar de professor ou se o aluno sair da lista dos 35.
+
+Por dentro, o registro antigo nunca é alterado: a correção cria um registro novo (mesmo número e mesmo lugar na lista), congelado como os outros.
+
+### Resumo em PDF
+
+**Baixar resumo em PDF** (apagado enquanto não há aluno consultado) monta, no próprio navegador, um PDF A4 com:
+
+- cartões de resumo (consultados, aprovados, reprovados, em andamento e média do grupo) e a tabela dos alunos, do mais recente ao mais antigo, com T1, T2, T3, média, situação e média para aprovação; os alunos em andamento aparecem com "—" nas notas em branco e com as metas;
+- no fim, a **Visão geral da turma**: a média da turma (barra de 0 a 10) e, lado a lado, um **gráfico de pizza** e um **gráfico de barras** com aprovados, reprovados e em andamento (quantidade e percentual com uma casa). Os alunos em andamento entram nos dois gráficos; a média da turma segue a regra da tela (só quem tem as três notas), e o PDF diz isso. Se a seção não couber na última página, vai para uma página nova;
+- as cores do tema escolhido e um rodapé numerado com o aviso de site não oficial.
+
+Privacidade: o PDF é montado em memória a partir do histórico da aba e entregue como download; nada é enviado a lugar nenhum. Ele **não leva o nome do professor**, e o nome do arquivo tem só a data (`notarapida-resumo-AAAA-MM-DD.pdf`). O arquivo baixado fica no seu dispositivo, fora do NotaRápida: em computador compartilhado, apague-o depois. O endereço temporário do arquivo some da memória ao limpar o histórico, trocar de professor, sair da página ou depois de 1 minuto.
 
 ## Abrir localmente
 
@@ -47,12 +65,13 @@ O NotaRápida em si não tem limite de professores: cada aba é uma sessão inde
 | 100 | visitas recusadas e lentas | 100 de 100 atendidos, resultados corretos, sem dado de um aparecendo no outro |
 | 300 (1.800 conexões) | não testado | sem falhas |
 
-O servidor do Python falha por ter fila de conexões de 5 e entregar o site sem compressão (cerca de 131 KB por visita). O `scripts/servir.js` usa fila de 1.024, mantém todos os arquivos já comprimidos na memória (brotli ou gzip, cerca de 29 KB por visita, 4,5 vezes menos) e responde com ETag/304 para quem já tem o arquivo. Numa rede de 100 Mbps, isso dá cerca de 430 visitas completas por segundo com o `scripts/servir.js`, contra cerca de 95 com o servidor do Python.
+O servidor do Python falha por ter fila de conexões de 5 e entregar o site sem compressão (hoje cerca de 185 KB por visita). O `scripts/servir.js` usa fila de 1.024, mantém todos os arquivos já comprimidos na memória (brotli ou gzip, hoje cerca de 42 KB por visita, 4,4 vezes menos) e responde com ETag/304 para quem já tem o arquivo. Numa rede de 100 Mbps, isso dá (por cálculo) cerca de 300 visitas completas por segundo com o `scripts/servir.js`, contra cerca de 68 com o servidor do Python.
 
 A meta de referência do projeto é **30 professores simultâneos**, o triplo do limite medido de 10, mantendo a segurança e o desempenho.
 
 Limites da medição:
 
+- Os testes de carga foram feitos quando o site tinha 131 KB (29 KB com brotli); desde então ele cresceu com o PDF e a edição de notas, mas a proporção entre os servidores é a mesma. Os números por visita acima são os de hoje.
 - O ambiente de teste tem teto de cerca de 1.800 pedidos por segundo, mesmo para um servidor mínimo; acima disso não há número confiável.
 - O tempo de resposta num único computador com 100 navegadores abertos cresce porque eles disputam a mesma CPU; isso é limite da máquina de teste, não do site (o JavaScript de cada cálculo leva poucos milissegundos).
 - Para abrir o site para a rede da escola, use `npm run servir -- --lan`. Atenção: sem a opção `--lan` só o próprio computador acessa; com ela o site passa a ser servido em **HTTP, sem criptografia**, para qualquer um da rede local. Como nenhum dado sai do navegador, o risco é só o de alguém na rede alterar os arquivos no caminho; para uso fora de uma rede de confiança, publique em um provedor com HTTPS (veja [Publicação](#publicação-github-pages)).
@@ -67,16 +86,19 @@ npm install
 npm test
 ```
 
-São 110 testes em `tests/` (`node:test` + `fast-check`, versão fixa em `package.json`):
+São 149 testes em `tests/` (`node:test` + `fast-check`, versão fixa em `package.json`):
 
 - `leitor-validador.test.js`: formatos de nota aceitos e rejeitados, limites, ordem e texto das mensagens, nomes.
-- `propriedades.test.js`: propriedades da média, classificação, histórico (mínimo entre N e 20), isolamento entre professores e resultado parcial.
-- `historico-somente-leitura.test.js`: histórico de 20 alunos congelado (alterar nota, nome ou lista lança erro e nada muda), faixas da média sem lacunas, resumo do grupo, carimbo, frase do dia, Dia do Professor, data por extenso e período do dia.
+- `propriedades.test.js`: propriedades da média, classificação, histórico (mínimo entre N e 35), isolamento entre professores e resultado parcial.
+- `historico-somente-leitura.test.js`: histórico de 35 alunos congelado (alterar um registro ou a lista direto lança erro e nada muda; o nome do arquivo é do tempo em que o histórico não podia ser corrigido), faixas da média sem lacunas, resumo do grupo, carimbo, frase do dia, Dia do Professor, data por extenso e período do dia.
+- `edicao-historico.test.js`: correção de notas (equivale a calcular de novo, mantém número, nome, média de aprovação e lugar, o resto da lista é o mesmo objeto, entradas inválidas e hostis não mudam nada, o painel de resultado acompanha) e propriedades sobre sequências aleatórias de cálculos, correções e limpezas.
+- `pdf.test.js`: arquivo PDF válido (cabeçalho, tabela xref, tamanhos dos fluxos, só ASCII), conteúdo, nomes hostis que viram texto inofensivo, paginação, visão geral da turma (pizza e barras lado a lado, alunos em andamento incluídos), percentuais e propriedades com texto Unicode qualquer.
 - `injecao.test.js`: textos maliciosos (`<script>`, `onerror`, `‮`, 1000 caracteres) tratados apenas como texto.
 - `entradas-adversariais.test.js`: textos feitos para travar o navegador (ReDoS, repetições longas, marcas combinantes, pares substitutos); tempo baixo e crescimento linear.
-- `estatico.test.js`: CSP, ausência de código inline e de APIs proibidas (inclusive `postMessage`, workers e `window.open`), atributos dos campos, aviso de site não oficial, ausência de símbolos oficiais, ordem de foco, `:hover` só em dispositivos com mouse, política de foco em telas de toque, nenhum texto abaixo de 14 px, `_headers`, robots.txt, tamanho do site.
+- `estatico.test.js`: CSP, ausência de código inline e de APIs proibidas (inclusive `postMessage`, workers e `window.open`), atributos dos campos, aviso de site não oficial, ausência de símbolos oficiais, ordem de foco (inclusive o editor de notas), histórico editável só pelo formulário de edição, `:hover` só em dispositivos com mouse, política de foco em telas de toque, nenhum texto abaixo de 14 px, `_headers`, robots.txt, tamanho do site.
 - `servidor.test.js`: o servidor local (rotas fechadas, travessia de diretório, cabeçalhos, compressão, ETag, métodos, pedidos malformados, limites por endereço, conexões lentas, ataque distribuído, 30 e 300 professores simultâneos).
 - `supply-chain.test.js`: o workflow de publicação (actions presas a commit, permissões mínimas, sem segredos, sem `pull_request_target`) e as dependências.
+- `versao-dos-arquivos.test.js`: o versionamento dos endereços na publicação (`scripts/versionar.js`), o passo do workflow e o contrato entre `notas.js` e `app.js` que dispara o aviso de arquivos de versões diferentes.
 
 No Windows, se o PowerShell bloquear `npm` por política de execução, use `npm.cmd`. Se aparecer `UNABLE_TO_VERIFY_LEAF_SIGNATURE` (antivírus ou proxy inspecionando HTTPS), rode com `$env:NODE_OPTIONS='--use-system-ca'`.
 
@@ -96,6 +118,15 @@ Como o fluxo foi endurecido:
 - Gatilhos só `push` em `main` e manual: nunca `pull_request_target`, então código de forks não roda com permissões do repositório. Nenhum segredo é usado.
 - Dependências: só `devDependencies`, versão exata e `package-lock.json` com integridade.
 
+### Arquivos de versões diferentes no navegador
+
+O GitHub Pages deixa o navegador guardar cada arquivo por 10 minutos, cada um por conta própria. Logo depois de uma publicação, ele pode juntar o `index.html` novo com um `.js` antigo (ou o contrário): o botão aparece, mas não funciona, sem nenhum aviso. Duas defesas:
+
+- O passo "Versionar os endereços dos arquivos do site" do workflow roda `scripts/versionar.js` na cópia que vai para o Pages e grava o hash do commit nos endereços (`js/app.js?v=e72eb9963a`). O HTML e os arquivos que ele chama passam a ser sempre da mesma publicação. O código-fonte não muda, e o script recusa versão que não seja hexadecimal e falha se não achar nenhuma referência (nunca versiona em silêncio).
+- O app confere o contrato com `notas.js` (`constantes.NIVEL`) e se o HTML tem os elementos de que precisa. Se não bater, mostra "Os arquivos do NotaRápida no seu navegador são de versões diferentes. Recarregue a página…" em vez de deixar botões sem efeito. Quando `app.js` passar a depender de algo novo de `notas.js`, suba o `NIVEL` nos dois arquivos (um teste confere que são iguais).
+
+Se isso aparecer logo depois de uma publicação, recarregue com **Ctrl+F5**.
+
 ### Configurações do GitHub que o código não consegue fazer
 
 Fazem parte da segurança, mas ficam na conta e no repositório (Settings):
@@ -112,7 +143,8 @@ Fazem parte da segurança, mas ficam na conta e no repositório (Settings):
 - **CSP em `<meta>`**: `default-src 'none'`, apenas scripts, estilos e imagens do próprio site, nenhuma conexão de rede (`connect-src 'none'`), sem plugins, quadros, workers, `<base>` ou envio de formulário, e **Trusted Types** (`require-trusted-types-for 'script'; trusted-types 'none'`) nos navegadores que suportam.
 - **Sem injeção de HTML**: o texto digitado entra na página só por `textContent`/`createElement`; não há `innerHTML`, `eval`, scripts inline nem atributos `on*`/`style` (verificado pelos testes). Os ícones são `<symbol>` SVG com atributos fixos.
 - **Sem armazenamento, sem rede e sem conversa entre abas**: nada de cookies, localStorage, sessionStorage, IndexedDB, service worker, `fetch`, XHR, `postMessage`, canais, workers ou `window.open`. Cada professor está isolado no próprio navegador; testado com 100 sessões simultâneas sem vazamento de dados entre elas.
-- **Registros somente leitura**: cada lançamento e a lista do histórico são congelados (`Object.freeze` profundo); alterar qualquer um lança erro.
+- **Registros imutáveis**: cada lançamento e a lista do histórico são congelados (`Object.freeze` profundo); alterar um deles direto lança erro. A correção de notas passa pela mesma validação do formulário e cria um registro novo, sem tocar no antigo.
+- **PDF sem comandos injetáveis**: o gerador é escrito à mão (nenhuma biblioteca de terceiros) e todo texto vai para o arquivo em hexadecimal, já convertido para a codificação da fonte; um nome com parênteses, barras ou marcação aparece como texto comum. O PDF não tem JavaScript, links, ações automáticas nem anexos. As larguras das fontes foram conferidas contra as métricas reais da Helvetica.
 - **Limite de entrada**: `maxlength="1000"` nos campos e corte em 1000 caracteres também no JavaScript, caso o atributo seja removido. As validações não travam com textos adversariais (testes de tempo).
 - **Anti-quadro**: se a página for aberta dentro de um `<iframe>` de outro site, o app não inicia e mostra apenas "O NotaRápida não pode ser exibido dentro de outro site.".
 - **Puxar para atualizar no celular** (`overscroll-behavior-y: contain`) não recarrega a página por engano e apaga os dados.
@@ -155,7 +187,7 @@ Limite do que isto prova: proteção contra ataque em massa de verdade (DDoS) s�
 
 ## Acessibilidade e celulares
 
-- Ordem de foco no teclado na tela do professor: aluno, T1, T2, T3, Calcular média, Limpar histórico e, por último, Trocar professor (que aparece no topo do cabeçalho).
+- Ordem de foco no teclado na tela do professor: média para aprovação, aluno, T1, T2, T3, Calcular média, Baixar resumo em PDF, Limpar histórico, o editor de notas (T1, T2, T3, Salvar alterações e Cancelar, quando aberto), os botões Editar das linhas e, por último, Trocar professor (que aparece no topo do cabeçalho). O botão Editar tem nome acessível "Editar notas de {aluno}", e o aviso de "notas atualizadas" (ou de "nenhuma nota foi alterada") é lido por tecnologias assistivas.
 - **Em telas de toque** (`pointer: coarse`) o foco não é movido sozinho para "Nome do aluno" depois de entrar ou de calcular: isso abriria o teclado virtual por cima do resultado. Em vez disso, o teclado é fechado e a tela rola até o resultado. Com mouse e teclado, o foco vai para "Nome do aluno" como previsto na especificação.
 - `:hover` só em dispositivos com mouse (`@media (hover: hover)`), alvos de toque de pelo menos 44 px, `color-scheme: only light` (o navegador não escurece a página sozinho), `prefers-reduced-motion` e modo de alto contraste (`forced-colors`) respeitados.
 - Desempenho medido em um iPhone SE simulado, com CPU e rede 4G lenta limitadas: sem mudança de layout durante o uso, rolagem a 60 quadros por segundo, primeira tela em cerca de 1 s e resposta a toques em cerca de 100 ms.
@@ -163,14 +195,16 @@ Limite do que isto prova: proteção contra ataque em massa de verdade (DDoS) s�
 ## Estrutura
 
 ```
-site/                  o que a página carrega (cerca de 131 KB sem compressão, 29 KB com brotli)
+site/                  o que a página carrega (cerca de 185 KB sem compressão, 42 KB com brotli)
   index.html           CSP em <meta>, telas, ícones em sprite SVG
   css/estilo.css       Guia_Visual (variáveis), temas, layout, animações
   js/notas.js          lógica pura (window.NotaRapida / module.exports)
+  js/pdf.js            gerador do resumo em PDF (window.NotaRapidaPdf / module.exports)
   js/app.js            estado em memória, DOM, foco, transições
   img/                 icone.svg e ilustracao.svg (próprios, sem símbolos oficiais)
   _headers  robots.txt  ai.txt
 scripts/servir.js      servidor local (sem dependências)
+scripts/versionar.js   põe a versão nos endereços do index.html na publicação
 tests/                 só Node; a página nunca os carrega
 .github/workflows/     testa e publica site/
 .kiro/specs/           requisitos, design e tarefas

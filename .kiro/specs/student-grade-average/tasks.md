@@ -2,9 +2,9 @@
 
 ## Overview
 
-Plano reconstruído a partir do que já foi implementado e testado (110/110 testes passando com `node --test "tests/**/*.test.js"`). O site fica em `site/` (HTML, CSS e JavaScript puro em scripts clássicos, sem dependências em tempo de execução). A lógica pura está em `site/js/notas.js` (notas em centésimos inteiros, média de aprovação configurável, resultado parcial e máquina de estados `reduzir`) e a interface em `site/js/app.js` (estado só na memória da aba, renderização por `textContent`). Os testes usam `node:test` com `fast-check` 4.10.2 fixo. O workflow `.github/workflows/pages.yml` testa e publica somente `site/` no GitHub Pages.
+Plano reconstruído a partir do que já foi implementado e testado (149/149 testes passando com `node --test "tests/**/*.test.js"`). O site fica em `site/` (HTML, CSS e JavaScript puro em scripts clássicos, sem dependências em tempo de execução). A lógica pura está em `site/js/notas.js` (notas em centésimos inteiros, média de aprovação configurável, resultado parcial e máquina de estados `reduzir`) e a interface em `site/js/app.js` (estado só na memória da aba, renderização por `textContent`). Os testes usam `node:test` com `fast-check` 4.10.2 fixo. O workflow `.github/workflows/pages.yml` testa e publica somente `site/` no GitHub Pages.
 
-Depois da primeira versão (tarefas 1 a 12), o projeto passou por um redesenho visual com identidade "site não oficial" (tarefa 15), histórico de 20 alunos somente leitura (16), melhorias de fluidez e de uso no celular (17), servidor local para 30 ou mais professores simultâneos (18) e uma revisão de segurança (19), documentadas na tarefa 20. Ficam pendentes apenas o envio ao repositório remoto, a ativação do GitHub Pages com a confirmação do primeiro deploy e as verificações manuais opcionais.
+Depois da primeira versão (tarefas 1 a 12), o projeto passou por um redesenho visual com identidade "site não oficial" (tarefa 15), histórico dos últimos alunos consultados, então somente leitura (16), melhorias de fluidez e de uso no celular (17), servidor local para 30 ou mais professores simultâneos (18) e uma revisão de segurança (19), documentadas na tarefa 20. Depois vieram o histórico de 35 alunos com o resumo em PDF (21) e seus gráficos de pizza e de barras (22), a correção de notas do histórico (23) e a defesa contra arquivos de versões diferentes no cache do navegador (24), documentados na tarefa 25. O site já está publicado no GitHub Pages (tarefa 13); ficam pendentes apenas as verificações manuais opcionais (tarefa 14), entre elas o download do PDF em Firefox e Safari.
 
 ## Tasks
 
@@ -101,7 +101,7 @@ Depois da primeira versão (tarefas 1 a 12), o projeto passou por um redesenho v
     - **Validates: Requirements 8.6**
 
   - [x] 3.10 Escrever teste de propriedade do modelo do histórico
-    - **Property 15: Modelo do Histórico_Recente** (min(N, 20) lançamentos, do mais novo ao mais antigo)
+    - **Property 15: Modelo do Histórico_Recente** (min(N, 35) lançamentos, do mais novo ao mais antigo; eram 20 na primeira versão)
     - **Validates: Requirements 9.2, 9.3, 9.6**
 
   - [x] 3.11 Escrever teste de propriedade de isolamento entre sessões
@@ -233,12 +233,13 @@ Depois da primeira versão (tarefas 1 a 12), o projeto passou por um redesenho v
   - Ensure all tests pass, ask the user if questions arise.
   - 43/43 testes passando na primeira versão (hoje 110/110, ver tarefa 20).
 
-- [ ] 13. Publicar no GitHub Pages
-  - [ ] 13.1 Enviar o projeto ao repositório remoto
+- [x] 13. Publicar no GitHub Pages
+  - [x] 13.1 Enviar o projeto ao repositório remoto
     - Enviar o código para https://github.com/AlanSouzaDev7/Projet.Site_NotaRapida na branch `main`, sem incluir `node_modules/`
     - _Requirements: 18.6_
 
-  - [ ] 13.2 Ativar o GitHub Pages e confirmar o primeiro deploy
+  - [x] 13.2 Ativar o GitHub Pages e confirmar o primeiro deploy
+    - Publicado em https://alansouzadev7.github.io/Projet.Site_NotaRapida/ pelo workflow (testes e publicação verdes)
     - Em Settings → Pages → Build and deployment, escolher a fonte "GitHub Actions"
     - Confirmar que o workflow passou nos testes e publicou em https://alansouzadev7.github.io/Projet.Site_NotaRapida/ por HTTPS
     - _Requirements: 16.2, 18.6, 20.7_
@@ -265,13 +266,13 @@ Depois da primeira versão (tarefas 1 a 12), o projeto passou por um redesenho v
     - Período do dia e data por extenso (sem `Intl`), Recado do dia, homenagem de 15 de outubro, régua com as faixas da média, carimbo, legenda das faixas no campo "Média para aprovação"
     - _Requirements: 7.12, 7.13, 12.1, 12.2, 24.1, 24.2, 24.3, 24.4, 24.5, 24.6_
 
-  - [x] 15.4 Reorganizar os dados em painéis numerados (1 Lançar notas, 2 Resultado, 3 Últimos 20 alunos)
+  - [x] 15.4 Reorganizar os dados em painéis numerados (1 Lançar notas, 2 Resultado, 3 Últimos alunos consultados)
     - Tabela do histórico a partir de 900 px e fichas abaixo disso; resumo do grupo; layout de duas colunas a partir de 1024 px
     - _Requirements: 9.4, 9.13, 10.3, 10.4, 10.5_
 
-- [x] 16. Histórico dos 20 últimos alunos consultados, somente leitura
+- [x] 16. Histórico dos últimos alunos consultados, somente leitura (limite e leitura revistos nas tarefas 21 e 23)
   - [x] 16.1 Ampliar e proteger o histórico em `notas.js`
-    - `TAMANHO_HISTORICO = 20`, `congelarProfundo` nos Lançamentos, lista e `HISTORICO_VAZIO` congelados, `resumirHistorico` e `faixasDaMedia`
+    - `TAMANHO_HISTORICO` (20 na época, hoje 35), `congelarProfundo` nos Lançamentos, lista e `HISTORICO_VAZIO` congelados, `resumirHistorico` e `faixasDaMedia`
     - _Requirements: 9.1, 9.2, 9.3, 9.6, 9.11, 9.12, 9.13, 20.14_
 
   - [x] 16.2 Escrever `tests/historico-somente-leitura.test.js`
@@ -279,7 +280,7 @@ Depois da primeira versão (tarefas 1 a 12), o projeto passou por um redesenho v
     - **Validates: Requirements 9.11, 9.12, 9.13, 12.1, 20.14, 24.1, 24.2, 24.3, 24.5**
 
   - [x] 16.3 Interface somente leitura e verificações estáticas
-    - Etiqueta "Somente leitura", "Limpar histórico" como único botão, nenhum campo editável, texto da interface coerente com os 20 da lógica (`estatico.test.js`)
+    - Etiqueta "Somente leitura", "Limpar histórico" como único botão, nenhum campo editável, texto da interface coerente com o limite da lógica (`estatico.test.js`); substituído pela tarefa 23, que tornou as notas corrigíveis
     - _Requirements: 9.8, 9.11, 2.2_
 
 - [x] 17. Fluidez e uso no celular
@@ -335,7 +336,64 @@ Depois da primeira versão (tarefas 1 a 12), o projeto passou por um redesenho v
     - _Requirements: 22.1, 22.2_
 
   - [x] 20.2 Commitar o trabalho
-    - Ficam pendentes só o envio à `main`, a ativação do Pages (tarefa 13) e as verificações manuais (tarefa 14)
+    - Ficam pendentes só as verificações manuais (tarefa 14)
+
+- [x] 21. Histórico de 35 alunos e resumo em PDF
+  - [x] 21.1 Ampliar o histórico de 20 para 35 alunos
+    - `TAMANHO_HISTORICO = 35` em `notas.js`; textos da tela, contador "de 35" e testes (a propriedade do modelo passa a `min(N, 35)`)
+    - _Requirements: 9.2, 9.3, 9.6, 9.13_
+
+  - [x] 21.2 Escrever o gerador `site/js/pdf.js` (`window.NotaRapidaPdf`)
+    - PDF 1.4 escrito à mão, sem biblioteca de terceiros: fontes padrão Helvetica (WinAnsi), texto sempre em hexadecimal, A4, cabeçalho com o tema, cartões de resumo, tabela paginada com cabeçalho repetido e rodapé numerado com o aviso de site não oficial; larguras das fontes conferidas contra as métricas reais
+    - _Requirements: 28.2, 28.3, 28.4, 28.8, 28.9, 28.10, 28.11_
+
+  - [x] 21.3 Botão "Baixar resumo em PDF" e entrega do arquivo
+    - Botão na área do histórico (desabilitado sem alunos); `aoBaixarPdf` lê `estado.historico`, entrega por `Blob` e `<a download>` e `liberarPdf` descarta o endereço temporário (limpar, trocar de professor, sair da página ou 1 minuto); aviso na tela de que o arquivo fica no dispositivo; PDF sem o nome do professor e arquivo nomeado só com a data
+    - _Requirements: 28.1, 28.2, 28.9, 28.12, 28.13, 2.2, 3.8, 19.11, 20.15_
+
+  - [x] 21.4 Escrever `tests/pdf.test.js`
+    - **Property 29: O PDF é sempre válido e só leva texto como texto**
+    - **Validates: Requirements 28.10, 28.11, 28.14**
+
+- [x] 22. Gráficos de pizza e de barras no PDF
+  - [x] 22.1 Seção "Visão geral da turma" no fim do documento
+    - Média da turma (valor e barra de 0 a 10), pizza e barras lado a lado e na mesma altura com aprovados, reprovados e em andamento (quantidade e percentual com uma casa); os alunos em andamento entram nos gráficos e a média segue a regra do grupo (só quem tem as três notas); nova página se não couber
+    - _Requirements: 28.5, 28.6, 28.7_
+
+  - [x] 22.2 Testes dos gráficos
+    - Conteúdo da seção, pizza e barras na mesma altura, alunos em andamento, uma única seção no fim com 1 a 35 alunos, cores e percentuais
+    - _Requirements: 28.5, 28.6, 28.7_
+
+- [x] 23. Correção de notas do histórico
+  - [x] 23.1 Ação `EDITAR_LANCAMENTO` no reducer
+    - `montarLancamento` extraído do cálculo; a correção valida com as regras do formulário (nome e média do registro, novas T1 a T3), troca o registro por um novo congelado (mesmo `id` e mesma posição, sem tocar no antigo) e atualiza o `resultado` se era o mesmo aluno; eventos `LANCAMENTO_EDITADO`, `EDICAO_INVALIDA` e `EDICAO_SEM_ALTERACAO`
+    - _Requirements: 27.4, 27.5, 27.6, 27.7, 27.11, 9.12_
+
+  - [x] 23.2 Interface: botão "Editar" por linha e Editor_de_Notas
+    - Coluna "Ações" com o botão "Editar" (nome acessível, 44 px), editor com T1 a T3 acima da tabela, linha destacada, foco e rolagem, erros por campo, "Salvar alterações", "Cancelar" e Escape, foco devolvido ao botão, anúncios, fechamento automático (limpar, trocar de professor, sair da página, aluno fora dos 35); removidos o selo "Somente leitura" e os textos que diziam que os registros não podem ser editados
+    - _Requirements: 27.1, 27.2, 27.3, 27.8, 27.9, 27.10, 27.14, 9.4, 9.8, 9.11, 21.9_
+
+  - [x] 23.3 Escrever `tests/edicao-historico.test.js` e atualizar os testes estáticos
+    - **Property 27: Corrigir equivale a calcular de novo; Property 28: O histórico continua coerente sob qualquer sequência de cálculos, correções e limpezas; Property 25 revista**
+    - **Validates: Requirements 27.6, 27.7, 27.12, 27.13, 9.12, 20.14**
+
+- [x] 24. Arquivos de versões diferentes no navegador
+  - [x] 24.1 Versionar os endereços na publicação
+    - `scripts/versionar.js` grava `?v=<hash do commit>` nos `href`/`src` de `css/` e `js/` da cópia publicada do `index.html`; passo novo no workflow, com o hash por variável de ambiente; o script recusa versão inválida e falha se não achar referência
+    - _Requirements: 29.1, 29.6, 26.8_
+
+  - [x] 24.2 Aviso no app quando os arquivos não combinam
+    - `constantes.NIVEL` em `notas.js` conferido contra `NIVEL_ESPERADO` em `app.js` e conferência dos elementos do HTML; se algo não bater, `.aviso-versao` (`role="alert"`) pede para recarregar e o app não inicia
+    - _Requirements: 29.2, 29.3, 29.4, 29.5_
+
+  - [x] 24.3 Escrever `tests/versao-dos-arquivos.test.js`
+    - Versionamento, passo do workflow sem texto de evento no comando, igualdade do `NIVEL` e existência de tudo o que `app.js` usa de `notas.js`; simulação em navegador de HTML ou `notas.js` da publicação anterior
+    - _Requirements: 29.1 a 29.5_
+
+- [x] 25. Documentação atualizada
+  - [x] 25.1 Atualizar o README e os specs (`requirements.md`, `design.md`, `tasks.md`)
+    - Histórico de 35 alunos corrigível, resumo em PDF com gráficos, versionamento dos arquivos, 149 testes, Requisitos 27 a 29 e a seção 6 do design (`pdf.js`); Requisito 9 reescrito e Suposições 7 a 10
+    - _Requirements: 22.1, 22.2_
 
 ## Notes
 
@@ -343,6 +401,7 @@ Depois da primeira versão (tarefas 1 a 12), o projeto passou por um redesenho v
 - Os testes de propriedade usam `fast-check` 4.10.2 com `numRuns: 300`; os números de Property seguem o `design.md` e as propriedades sem número cobrem critérios acrescentados depois (média de aprovação, resultado parcial e Tratamento).
 - No PowerShell desta máquina, use `npm.cmd test` ou `node --test "tests/**/*.test.js"` (Node 22 ou mais recente). Para abrir o site com o servidor do projeto: `npm run servir` (veja o README).
 - O GitHub Pages não aceita cabeçalhos personalizados: lá valem a CSP em `<meta>` e o anti-quadro em `app.js`; `site/_headers` vale só para Netlify ou Cloudflare Pages.
+- O GitHub Pages deixa o navegador guardar cada arquivo por 10 minutos, separadamente; por isso a publicação grava `?v=<hash>` nos endereços do `index.html` (`scripts/versionar.js`) e o app avisa se os arquivos não combinarem (tarefa 24). Depois de uma publicação, recarregue com Ctrl+F5.
 - Tempos dos Requisitos 14 a 17 e a compatibilidade entre navegadores são atendidos pela arquitetura (cálculo síncrono, sem rede, animações só com `opacity`/`transform`) e conferidos manualmente.
 
 ## Task Dependency Graph
@@ -350,8 +409,7 @@ Depois da primeira versão (tarefas 1 a 12), o projeto passou por um redesenho v
 ```json
 {
   "waves": [
-    { "id": 0, "tasks": ["13.1", "14.1", "14.2"] },
-    { "id": 1, "tasks": ["13.2"] }
+    { "id": 0, "tasks": ["14.1", "14.2"] }
   ]
 }
 ```

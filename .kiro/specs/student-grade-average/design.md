@@ -2,14 +2,15 @@
 
 ## Overview
 
-O NotaRápida é um site estático de uma página (`site/index.html`) com duas telas: a Tela_Inicial, onde o professor informa o nome, e a Tela_do_Professor, onde ele lança o nome do aluno e as notas T1, T2 e T3 e vê a Média_Final, a Classificação, a Posição_em_Relação_à_Média e os 20 últimos alunos consultados (somente leitura).
+O NotaRápida é um site estático de uma página (`site/index.html`) com duas telas: a Tela_Inicial, onde o professor informa o nome, e a Tela_do_Professor, onde ele lança o nome do aluno e as notas T1, T2 e T3 e vê a Média_Final, a Classificação, a Posição_em_Relação_à_Média e os 35 últimos alunos consultados, que podem ser corrigidos e resumidos em um PDF.
 
 Tudo roda no navegador com HTML, CSS e JavaScript puro, sem frameworks, sem dependências de runtime, sem servidor e sem armazenamento persistente. O site abre por `file://` (clique duplo), pelo servidor local do projeto (`npm run servir`, `scripts/servir.js`, sem dependências) ou por um servidor local simples. O visual é inspirado nas cores do Estado do Rio de Janeiro, com aviso permanente de **site não oficial** e sem nenhum símbolo oficial (Req. 23).
 
-O código tem duas camadas:
+O código tem três camadas:
 
 - **Lógica pura (`site/js/notas.js`)**: Leitor_de_Nota, Validador, Calculadora_de_Média, Formatador_de_Nota, Histórico_Recente (congelado), faixas da média, resumo do histórico, carimbo, recado do dia, data por extenso, mensagens e uma função pura de transição da sessão. Não acessa o DOM. Exportada como `window.NotaRapida` no navegador e por `module.exports` no Node, para os testes.
 - **Interface (`site/js/app.js`)**: guarda o estado da sessão em variáveis JS (Memória_da_Aba), trata eventos, renderiza com `textContent`, controla foco, anúncios e animações.
+- **Resumo em PDF (`site/js/pdf.js`)**: gerador de PDF puro (sem DOM, rede ou armazenamento): recebe os Lançamentos e devolve os bytes do arquivo. Escrito à mão, sem biblioteca de terceiros. Exportado como `window.NotaRapidaPdf` e por `module.exports` (seção 6).
 
 ### Decisões principais
 
@@ -25,13 +26,16 @@ O código tem duas camadas:
 | Dados na página | Somente `textContent`, `createElement`, `replaceChildren` | Nenhum dado digitado vira HTML (Req. 20.1) |
 | Animações | Classes CSS com `@keyframes` (`opacity` e `transform`), fim por `animationend` + timeout de segurança | Compatível com a CSP (sem estilo inline) e leve (Req. 17.6) |
 | Testes | `node:test` + `fast-check` 4.10.2 (devDependency, versão fixa) em `tests/` | Nenhum arquivo de teste é carregado pela página (Req. 16.3, 16.4) |
-| Histórico | 20 Lançamentos, lista e registros congelados (`Object.freeze` profundo), tabela sem controles de edição | Registros somente leitura (Req. 9.11, 9.12, 20.14) |
+| Histórico | 35 Lançamentos; lista e registros congelados (`Object.freeze` profundo); tabela com o botão "Editar" em cada linha | Registros imutáveis e corrigíveis (Req. 9.11, 9.12, 20.14, 27) |
 | Temas | Classes `tema--neutro/feminino/masculino` no `<body>` e na `#tela-professor`; cada tema redefine variáveis de cor, degradês e sombras | Aparência por Tratamento sem estilo inline (Req. 11.7) |
 | Identidade | Faixa, cartão e rodapé "Site não oficial"; motivo geométrico próprio, sem brasão (Req. 23) | Não ser confundido com site do governo |
 | Foco em toque | `ehTelaDeToque()` (`pointer: coarse`): sem foco automático em "Nome do aluno"; teclado fechado e rolagem até o resultado | O teclado virtual cobria o resultado (Req. 2.5, 4.6) |
 | Data | `formatarDataExtenso` feita à mão, sem `Intl` | A primeira chamada ao `Intl` custa dezenas de ms em celulares modestos (Req. 24.5) |
 | Servidor local | `scripts/servir.js`: tudo em memória, comprimido uma vez, rotas fechadas, limites por endereço | 30+ professores simultâneos com segurança (Req. 25) |
 | Publicação | Actions presas a commit, permissões mínimas por job | Cadeia de publicação segura (Req. 26) |
+| Correção de notas | A ação `EDITAR_LANCAMENTO` do reducer valida com `validarFormulario` (nome e média do registro mais as novas T1 a T3) e troca o registro por um novo, com o mesmo `id` e na mesma posição; o antigo nunca é alterado | Mesmas regras e mesmo cálculo do formulário, sem quebrar a imutabilidade (Req. 27) |
+| PDF | `pdf.js` escreve o PDF 1.4 à mão: Helvetica padrão (WinAnsi), texto sempre em hexadecimal, A4, gráficos com retângulos e curvas de Bézier; download por `Blob` e `<a download>` | Sem biblioteca de terceiros (CSP e zero dependências) e sem comandos injetáveis (Req. 28) |
+| Versões dos arquivos | `scripts/versionar.js` na publicação (`?v=hash`) e, no app, conferência de `NIVEL` e dos elementos do HTML | O Pages deixa o navegador guardar cada arquivo por 10 minutos, separadamente (Req. 29) |
 
 ### Pesquisa que orienta o design
 
@@ -53,22 +57,24 @@ Projeto-NotaRapida/
 │   ├── index.html                ← CSP em <meta>; faixa "site não oficial"; as duas telas; sprite SVG
 │   ├── css/estilo.css            ← Guia_Visual (variáveis), temas, layout, estados, animações
 │   ├── js/notas.js               ← lógica pura → window.NotaRapida / module.exports
+│   ├── js/pdf.js                 ← gerador do resumo em PDF → window.NotaRapidaPdf / module.exports
 │   ├── js/app.js                 ← estado em memória, DOM, eventos, foco, transições
 │   ├── img/icone.svg             ← favicon e logo (evita 404 de /favicon.ico)
 │   ├── img/ilustracao.svg        ← ilustração decorativa da Tela_Inicial (própria, sem símbolo oficial)
 │   ├── robots.txt  ai.txt        ← pedidos aos robôs de IA (melhor esforço)
 │   └── _headers                  ← cabeçalhos para Netlify/Cloudflare e para scripts/servir.js (ignorado no GitHub Pages)
 ├── scripts/servir.js             ← servidor local sem dependências (Req. 25)
+├── scripts/versionar.js          ← põe ?v=<hash> nos endereços do index.html na publicação (Req. 29)
 ├── tests/                        ← só Node; nunca referenciado pelo index.html
 │   ├── leitor-validador.test.js  propriedades.test.js  injecao.test.js
-│   ├── historico-somente-leitura.test.js  entradas-adversariais.test.js
-│   └── estatico.test.js  servidor.test.js  supply-chain.test.js
+│   ├── historico-somente-leitura.test.js  edicao-historico.test.js  entradas-adversariais.test.js
+│   └── estatico.test.js  servidor.test.js  supply-chain.test.js  pdf.test.js  versao-dos-arquivos.test.js
 ├── .github/workflows/pages.yml   ← testa e publica site/ no GitHub Pages
 ├── package.json                  ← "test": "node --test \"tests/**/*.test.js\"" e "servir": "node scripts/servir.js"
 └── AulaPython-TRABALHOCONCLUIDO.py
 ```
 
-Tamanho sem minificação: HTML ≈ 23 KB, CSS ≈ 47 KB, `notas.js` ≈ 26 KB, `app.js` ≈ 31 KB, ícone e ilustração ≈ 4 KB. Total ≈ 131 KB (130.866 bytes), abaixo do limite de 200 KB; com brotli, uma visita completa baixa 29.033 bytes (gzip: 32.762).
+Tamanho sem minificação: HTML ≈ 26 KB, CSS ≈ 50 KB, `notas.js` ≈ 29 KB, `pdf.js` ≈ 33 KB, `app.js` ≈ 42 KB, ícone e ilustração ≈ 4 KB. Total ≈ 185 KB (184.865 bytes carregados; `site/` inteiro: 187.202), abaixo do limite de 200 KB (204.800 bytes), com uns 17 KB de folga; com brotli, uma visita completa baixa 41.630 bytes (gzip: 46.893). A medição de capacidade do Req. 25 foi feita com o site em 131 KB (29 KB com brotli).
 
 ### Camadas
 
@@ -88,7 +94,7 @@ flowchart LR
 
 - `notas.js` não usa `window`, `document`, temporizadores nem armazenamento; recebe strings/números e devolve objetos novos, sem mutar argumentos.
 - `app.js` é o único que toca o DOM e guarda estado.
-- Ordem no `<head>`: `<script src="js/notas.js" defer>` e depois `<script src="js/app.js" defer>`. `defer` preserva a ordem.
+- Ordem no `<head>`: `<script src="js/notas.js" defer>`, `<script src="js/pdf.js" defer>` e `<script src="js/app.js" defer>`. `defer` preserva a ordem.
 
 ### Exportação de `notas.js`
 
@@ -173,6 +179,8 @@ require-trusted-types-for 'script'; trusted-types 'none'
 | `base-uri 'none'`, `form-action 'none'` | Sem `<base>`; nenhum formulário é enviado | 19.9, 20.2 |
 | `require-trusted-types-for 'script'`, `trusted-types 'none'` | Trusted Types: nos navegadores que suportam, qualquer atribuição de string a `innerHTML`, `eval` e afins é bloqueada, e nenhuma política pode ser criada | 20.1, 20.2 |
 
+**Download do PDF.** O resumo é entregue por `Blob`, endereço `blob:` e `<a download>` clicado por script. Esse download não é governado pela CSP (`default-src 'none'` não o bloqueia): no Chrome, com a CSP em `<meta>`, o arquivo é baixado e o console fica sem violações. Nenhuma diretiva foi afrouxada.
+
 **Risco de `'self'` em `file://`.** No servidor local, `'self'` corresponde a `http://localhost:porta` e libera os arquivos do site. Em `file://`, o Chrome e o Edge costumam aceitar arquivos da mesma pasta, mas no Firefox (origem única por arquivo) e no Safari o comportamento precisa ser confirmado. Se `'self'` não corresponder, a página aparece sem estilo e sem JS, com violações de CSP no console.
 
 **Verificação manual obrigatória** (antes de concluir a implementação): abrir `site/index.html` por clique duplo no Firefox, Chrome, Edge e Safari; abrir o console e recarregar; confirmar ausência de mensagens de CSP e de erros de carregamento; confirmar que a Tela_Inicial aparece com o Guia_Visual e que "Entrar" funciona. Repetir pelo servidor local (ex.: `python -m http.server 8080 --directory site`).
@@ -186,6 +194,7 @@ A hospedagem deixou de estar fora do escopo: o site é publicado no GitHub Pages
 - Repositório: https://github.com/AlanSouzaDev7/Projet.Site_NotaRapida
 - URL pública: https://alansouzadev7.github.io/Projet.Site_NotaRapida/ (HTTPS com o certificado do `github.io`)
 - `.github/workflows/pages.yml`: a cada push em `main` (ou manualmente), o job `testar` roda `npm ci --ignore-scripts` e `npm test` no Node 24; só se passar, o job `publicar` envia **somente a pasta `site/`** com `upload-pages-artifact` + `deploy-pages`. Endurecimento (Req. 26): cada action presa a um **commit** de 40 caracteres (a tag `v7` poderia ser movida por quem controla o repositório da action; um commit não), `permissions: {}` no topo e só o necessário em cada job (testes: `contents: read`; publicação: `pages: write` e `id-token: write`), `timeout-minutes`, `persist-credentials: false`, gatilhos só `push` em `main` e manual (nunca `pull_request_target`), nenhum segredo. Atualizar uma action é trocar o commit conferindo a versão; `tests/supply-chain.test.js` falha se uma action voltar a usar tag.
+- **Versão nos endereços (Req. 29).** O GitHub Pages responde com `Cache-Control: max-age=600` para todos os arquivos: o navegador pode guardar o `index.html` e cada `.js` ou `.css` por 10 minutos, cada um por conta própria, e juntar arquivos de publicações diferentes (reproduzido: com HTML ou `notas.js` antigos, o botão "Editar" aparecia e não funcionava, em silêncio). Antes do upload, o passo "Versionar os endereços dos arquivos do site" roda `node scripts/versionar.js site/index.html "$VERSAO"` (com `VERSAO: ${{ github.sha }}` em `env`, sem `${{ }}` no comando), que reescreve só os `href`/`src` de `css/` e `js/` da cópia que vai para o Pages (`js/app.js?v=e72eb9963a`). O código-fonte, os testes e o servidor local não mudam (`servir.js` ignora a parte `?v=`). O script recusa versão que não seja hexadecimal de 7 a 40 caracteres e falha se não achar nenhuma referência. Como defesa em profundidade, o app confere `constantes.NIVEL` de `notas.js` (contra `NIVEL_ESPERADO`) e os elementos de que depende; se algo não bater, mostra o aviso `.aviso-versao` (`role="alert"`) pedindo para recarregar e não inicia. O `NIVEL` sobe quando `app.js` passa a depender de algo novo de `notas.js`.
 
 **Anti-quadro por script.** O GitHub Pages não aceita cabeçalhos personalizados, e `frame-ancestors` é ignorado em `<meta>`. Por isso `app.js` testa, no início, se a página está dentro de um quadro (`window.top !== window.self`, erro de acesso conta como quadro); se estiver, adiciona `html.em-quadro`, o CSS esconde `.palco`, o aviso `#aviso-quadro` aparece e o NotaRápida não é iniciado. É uma proteção de melhor esforço contra clickjacking (não funciona com JS desativado).
 
@@ -215,6 +224,7 @@ Estrutura resumida (ids usados por `app.js`; a lista completa de ids é conferid
   <link rel="icon" href="img/icone.svg" type="image/svg+xml">
   <link rel="stylesheet" href="css/estilo.css">
   <script src="js/notas.js" defer></script>
+  <script src="js/pdf.js" defer></script>
   <script src="js/app.js" defer></script>
 </head>
 <body class="tema--neutro">
@@ -256,8 +266,9 @@ Estrutura resumida (ids usados por `app.js`; a lista completa de ids é conferid
           <!-- #homenagem (oculta), #saudacao-periodo, h1#saudacao, subtítulo e a lousa
                "Recado do dia" (#recado-texto, #recado-autor) -->
         </header>
-        <p class="aviso-dados">Nada é salvo. ... Apenas os 20 últimos alunos consultados aparecem,
-          e esses registros são somente para leitura.</p>
+        <p class="aviso-dados">Nada é salvo. ... Apenas os 35 últimos alunos consultados aparecem,
+          e você pode corrigir as notas deles. O resumo em PDF só existe se você o baixar: o
+          arquivo fica no seu dispositivo, fora do NotaRápida.</p>
         <div class="grade">
           <section class="cartao painel-form">
             <!-- 1. form#form-notas: #campo-media + ul#ajuda-media (legenda das faixas), #campo-aluno,
@@ -269,8 +280,10 @@ Estrutura resumida (ids usados por `app.js`; a lista completa de ids é conferid
                  #res-metas, #res-mensagem, "Média para aprovação" -->
           </section>
           <section class="cartao painel-historico">
-            <!-- 3. "Últimos 20 alunos consultados", etiqueta "Somente leitura", #botao-limpar,
-                 dl#resumo, #historico-vazio e table com tbody#historico-corpo -->
+            <!-- 3. "Últimos 35 alunos consultados", #botao-pdf (disabled até haver aluno) e
+                 #botao-limpar, form#form-edicao (Editor_de_Notas, hidden: #titulo-edicao, T1 a T3
+                 em #campo-edicao-t1..t3, #botao-salvar-edicao e #botao-cancelar-edicao),
+                 dl#resumo, #historico-vazio e table com tbody#historico-corpo e a coluna "Ações" -->
           </section>
         </div>
         <div class="acoes">
@@ -296,6 +309,7 @@ Notas:
 - O botão "Trocar professor" é o último focável no DOM e o CSS o posiciona no topo: a partir de 900px ele fica sobre o cabeçalho (`.acoes` na linha 1 da grade, com `.cabecalho__texto` reservando 58px); abaixo disso, logo após o cabeçalho. A ordem de foco do Req. 21.9 é mantida.
 - O único `tabindex` do HTML é o `-1` do `<main>` (alvo do link "Ir para o conteúdo"); a tabela do histórico fica dentro de um `div` sem `tabindex` nem `role`, para não criar parada de foco extra (Req. 21.17).
 - Marcos únicos: um banner (a faixa de aviso), um `<main>` e um rodapé (Req. 21.17).
+- O Editor_de_Notas (`form#form-edicao`, `hidden` até abrir) fica dentro do cartão do histórico, acima do resumo; seus campos T1 a T3 repetem os atributos dos campos do formulário (`inputmode="decimal"`, `maxlength="1000"`, `autocomplete="off"`). O botão "Editar" de cada linha é criado por `app.js` (`button[data-editar]`, com `aria-label` "Editar notas de {nome}"), e os ícones `i-pdf` e `i-lapis` do sprite acompanham os botões novos.
 - `#anuncio` é a única região `aria-live`; o painel não é região viva, para o resultado ser lido uma vez (Req. 7.9).
 - Viewport sem `maximum-scale` nem `user-scalable=no` (Req. 21.14); `<meta name="color-scheme" content="only light">` (Req. 21.16).
 
@@ -350,6 +364,7 @@ Cada tema traz também o degradê dos botões (`--grad-botao` e `--grad-botao-ho
 | Botão primário | `--grad-botao`, texto branco | `--grad-botao-hover` | `:focus-visible`: mesmo anel | – |
 | Botão secundário | Fundo branco, texto e borda `--cor-primaria` | Fundo `--cor-destaque-suave`, texto e borda `--cor-destaque` | Mesmo anel | – |
 | "Trocar professor" (≥ 900px, sobre o cabeçalho) | Texto branco, fundo e borda translúcidos | Fundo mais claro | Anel branco | – |
+| Botão desabilitado ("Baixar resumo em PDF" sem alunos) | Fundo `--cor-superficie-funda`, texto `--cor-texto-suave`, borda `--cor-borda`, sem sombra e com cursor `not-allowed`; sem hover nem clique | – | Fora da ordem de foco (atributo `disabled`) | – |
 
 Todo `:hover` está dentro de `@media (hover: hover)` (Req. 21.15, conferido pelo teste). Os cartões usam `overflow: hidden` (para conter fundos e cantos arredondados), mas o preenchimento interno de 24px é maior que o anel de foco (3px + 2px de afastamento), então o anel nunca é cortado.
 
@@ -360,6 +375,8 @@ Todo `:hover` está dentro de `@media (hover: hover)` (Req. 21.15, conferido pel
 - Tela_do_Professor: cabeçalho com a saudação à esquerda e a lousa do recado à direita (≥ 900px); abaixo, o aviso de dados e `.grade`. A partir de 1024px a grade tem duas colunas (`5fr` e `6fr`) com áreas `"form resultado" "historico historico"` (Req. 10.4); abaixo disso, uma coluna: formulário, resultado, histórico (Req. 10.5).
 - T1, T2 e T3 em 3 colunas a partir de 480px; empilhadas abaixo disso. O resumo do histórico tem 5 colunas a partir de 720px.
 - **Histórico:** tabela a partir de 900px; abaixo disso, `.tabela`, `tbody`, `tr`, `th` e `td` viram `display: block` e o cabeçalho da tabela fica visualmente oculto (cada linha vira uma ficha por aluno).
+- **Correção de notas:** `.edicao` (cartão com borda `--cor-primaria` e T1 a T3 em três colunas a partir de 480px) acima do resumo; `.tabela tbody tr.lancamento--editando` com fundo `--cor-acento-suave` (e, nas fichas, borda `--cor-primaria`); a coluna "Ações" alinha o botão `.botao--tabela` (44px de altura) à direita, e abaixo de 900px o botão ocupa a largura da ficha.
+- **Aviso de versões diferentes:** `.aviso-versao` (faixa em tom de ouro no topo, `role="alert"`), só quando o app detecta arquivos de publicações diferentes (Req. 29).
 - `html { overscroll-behavior-y: contain }`, `color-scheme: only light` e blocos para `forced-colors: active` e `prefers-reduced-motion: reduce` (Req. 21.16 e 21.18).
 
 Esboço – Tela_Inicial (≥ 900px):
@@ -375,7 +392,7 @@ Esboço – Tela_Inicial (≥ 900px):
 │  │ alunos, em poucos segundos.  │  [___________________________]  │  │
 │  │  ◦ Média e situação na hora  │  Como prefere ser chamado(a)?   │  │
 │  │  ◦ Quanto falta              │  (Professora)(Professor)(Neutro)│  │
-│  │  ◦ Últimos 20 alunos         │  [           Entrar          ]  │  │
+│  │  ◦ Últimos 35 alunos         │  [           Entrar          ]  │  │
 │  │  ◦ Nada é salvo              │  Nada é salvo · Site não oficial│  │
 │  └──────────────────────────────┴─────────────────────────────────┘  │
 │  Site não oficial. Projeto independente, sem vínculo com o Governo… │
@@ -391,7 +408,7 @@ Esboço – Tela_do_Professor, largura ≥ 1024px:
 │ ▓▓ Boa noite · Domingo, 4 de outubro            ┌ Recado do dia ───┐ │
 │ ▓▓ Olá, Prof. Ana Souza                         │ “Ensinar é …”    │ │
 │ ▓▓ [Trocar professor]   (cabeçalho em degradê)  └──────────────────┘ │
-│ 🔒 Nada é salvo. ... Apenas os 20 últimos alunos consultados ...     │
+│ 🔒 Nada é salvo. ... Apenas os 35 últimos alunos consultados ...     │
 │ ┌─ ① Lançar notas ──────────────┐  ┌─ ② Resultado ───────────────┐   │
 │ │ Média para aprovação [6,00]   │  │ Maria Oliveira   (carimbo)  │   │
 │ │ ▪ Reprovado 0,00 a 5,99 ...   │  │ (Aprovado) (Na média)       │   │
@@ -400,16 +417,18 @@ Esboço – Tela_do_Professor, largura ≥ 1024px:
 │ │ [      Calcular média       ] │  │ T1 7,50 · T2 6,00 · T3 8,00 │   │
 │ └───────────────────────────────┘  │ Parabéns Maria Oliveira, … │   │
 │                                    └─────────────────────────────┘   │
-│ ┌─ ③ Últimos 20 alunos consultados ──── [Somente leitura][Limpar] ──┐│
-│ │ Consultados 3 de 20 · Aprovados 2 · Reprovados 1 · Média 6,90    ││
-│ │ Aluno        T1    T2    T3   Média  Situação    Média p/ aprov. ││
-│ │ Maria …      7,50  6,00  8,00 7,16   Aprovado    6,00            ││
+│ ┌─ ③ Últimos 35 alunos consultados ─ [Baixar PDF] [Limpar histórico] ┐│
+│ │ Consultados 3 de 35 · Aprovados 2 · Reprovados 1 · Média 6,90      ││
+│ │ Aluno      T1    T2    T3   Média  Situação    Aprov.   Ações      ││
+│ │ Maria …    7,50  6,00  8,00 7,16   Aprovado    6,00   [Editar]     ││
 │ └───────────────────────────────────────────────────────────────────┘│
 │ Site não oficial … (rodapé)                                          │
 └──────────────────────────────────────────────────────────────────────┘
 ```
 
-Abaixo de 1024px a mesma ordem vira uma coluna: cabeçalho (saudação e recado), "Trocar professor", aviso, Lançar notas, Resultado, Últimos 20 alunos consultados (fichas, abaixo de 900px).
+Abaixo de 1024px a mesma ordem vira uma coluna: cabeçalho (saudação e recado), "Trocar professor", aviso, Lançar notas, Resultado, Últimos 35 alunos consultados (fichas, abaixo de 900px).
+
+Ao acionar "Editar", o Editor_de_Notas aparece dentro do cartão do histórico, acima do resumo: título "Editar notas de {nome}", T1, T2, T3, "Salvar alterações" e "Cancelar"; a linha em edição fica destacada (`--cor-acento-suave`).
 
 #### Resultado e histórico
 
@@ -417,7 +436,7 @@ Abaixo de 1024px a mesma ordem vira uma coluna: cabeçalho (saudação e recado)
 - Indicador de posição (`.indicador`): pílula clara com borda, texto "Abaixo da média", "Na média" ou "Acima da média" (Req. 7.7).
 - Régua: SVG `viewBox="0 0 320 40"` com quatro retângulos recortados por `clipPath` (uma faixa por classificação, posicionados só por atributos `x` e `width`), seta (`#reg-marcador`, movida por `transform`) e as pontas "0" e "10". Escala `ESCALA_REGUA = 320 / 1000` por centésimo. O texto equivalente fica em `#res-regua-rotulo` (Req. 7.12).
 - Carimbo: círculo girado, `aria-hidden="true"`, com o texto da Classificação e a cor do tom (Req. 7.13).
-- Histórico: `<table>` com `<caption>` oculta, cabeçalhos `scope="col"` e uma linha por Lançamento; Lançamentos em andamento têm a barra lateral `--cor-andamento`, "Média parcial {p}" e o resumo "Aprovação: … · Acima: …" (Req. 13.8). Resumo (`dl#resumo`): Consultados (de 20), Aprovados, Reprovados, Em andamento e Média do grupo (Req. 9.13).
+- Histórico: `<table>` com `<caption>` oculta, cabeçalhos `scope="col"` e uma linha por Lançamento; Lançamentos em andamento têm a barra lateral `--cor-andamento`, "Média parcial {p}" e o resumo "Aprovação: … · Acima: …" (Req. 13.8). Resumo (`dl#resumo`): Consultados (de 35), Aprovados, Reprovados, Em andamento e Média do grupo (Req. 9.13). Cada linha leva `data-id` (número do Lançamento) e, na coluna "Ações", o botão "Editar" (`data-editar`); a linha corrigida substitui a antiga no mesmo lugar e roda a Animação_de_Histórico. O resumo mostra "Consultados (de 35)".
 
 #### Animações
 
@@ -450,7 +469,7 @@ Regras do controlador de animação (`app.js`):
 
 ```js
 NotaRapida = {
-  constantes: { LIMITE_NOME: 100, LIMITE_CAMPO: 1000, TAMANHO_HISTORICO: 20, MEDIA_PADRAO: 600,
+  constantes: { LIMITE_NOME: 100, LIMITE_CAMPO: 1000, TAMANHO_HISTORICO: 35, MEDIA_PADRAO: 600, NIVEL: 2,
                 LIMITES_SOMA: { NA_MEDIA: 1800, ACIMA: 2400, EXCELENTE: 2700 } },
   CLASSIFICACOES: ['Reprovado', 'Aprovado – na média', 'Aprovado – acima da média', 'Aprovado – excelente'],
   POSICOES: ['Abaixo da média', 'Na média', 'Acima da média'],
@@ -477,7 +496,7 @@ NotaRapida = {
   posicionarSoma(soma),          // → uma das 3 Posições
   rotuloSituacao(classificacao), // → 'Reprovado' | 'Aprovado'
   montarMensagem(nome, classificacao, mediaTexto),
-  adicionarAoHistorico(lista, lancamento),   // lista congelada: [lancamento, ...lista].slice(0, 20)
+  adicionarAoHistorico(lista, lancamento),   // lista congelada: [lancamento, ...lista].slice(0, 35)
   faixasDaMedia(M),              // → [{ chave, rotulo, de, ate }] em centésimos; faixas vazias omitidas
   resumirHistorico(historico),   // → { total, aprovados, reprovados, emAndamento, mediaGrupo } (congelado)
   carimboDoLancamento(lancamento), // → { tom, texto }
@@ -487,6 +506,8 @@ NotaRapida = {
   reduzir(estado, acao)          // → { estado, evento }
 }
 ```
+
+`reduzir` entende também `EDITAR_LANCAMENTO { id, campos: { t1, t2, t3 } }` (tabela das ações, na seção Data Models). O cálculo do Lançamento foi extraído para `montarLancamento(id, dados)` (interno), usado pelo cálculo novo e pela correção, de modo que os dois chegam sempre ao mesmo resultado. `constantes.NIVEL` é o número do contrato com `app.js` (Req. 29).
 
 Mensagens de resultado (`montarMensagem`), com o nome inserido como string comum e exibido por `textContent`:
 
@@ -542,6 +563,9 @@ IIFE com `'use strict'`, sem globais próprias.
 | `transicao` | `{ emCurso, destino, timeout }` |
 | Renderização | `prepararCabecalho`, `renderErros`, `limparErros`, `renderResultado` (com `desenharRegua`, `aplicarCarimbo`, `preencherFaixas`), `inserirNoHistorico`, `renderResumo`, `anunciar`, `limparDadosDaPagina` – só `textContent`/`createElement`/`replaceChildren`/atributos SVG |
 | Ambiente | `ehTelaDeToque()` (`(pointer: coarse)`), `movimentoReduzido()`, `revelarResultado()`, `aquecerTelaDoProfessor()` |
+| Histórico editável | `abrirEdicao`, `fecharEdicao`, `aoEnviarEdicao`, `aoTeclarNaEdicao`, `aoClicarNoHistorico` (delegação de evento no `tbody`), `sincronizarEdicao` |
+| PDF | `aoBaixarPdf`, `liberarPdf` |
+| Consistência | `avisarArquivosDesencontrados`, `NIVEL_ESPERADO`, `idsAusentes` |
 | Controladores | `aoEnviarEntrada`, `aoEnviarNotas`, `aoLimparHistorico`, `aoTrocarProfessor` |
 | Ciclo de vida | `iniciar` (limpa os campos, garante a Tela_Inicial, foca o campo e agenda o aquecimento), `pagehide`, `pageshow` |
 
@@ -552,6 +576,9 @@ IIFE com `'use strict'`, sem globais próprias.
 - **Limpar histórico**: se havia itens, esvazia a tabela e o resumo, mostra "Nenhuma nota lançada ainda." e anima; se não, nada muda (Req. 9.7, 9.9, 10.15). O histórico é desenhado só como leitura: cada linha é criada por `createElement`/`textContent` e nenhum controle de edição existe.
 - **Aquecimento do primeiro layout**: o primeiro layout da Tela_do_Professor custa cerca de 6 vezes mais que os seguintes em celulares modestos (fontes e texto ainda não usados). `agendarAquecimento()` (`requestIdleCallback` com limite de 2 s, ou `setTimeout` de 600 ms) chama `aquecerTelaDoProfessor()` depois que a Tela_Inicial está interativa: a tela ganha `.tela--aquecendo` (posição absoluta, `visibility: hidden`, sem eventos), perde `hidden`, é forçada a calcular layout (`offsetHeight`) e volta a `hidden`, tudo na mesma tarefa, fora do fluxo, sem pintura e sem ser lida por leitores de tela (Req. 16.7). Só roda com a Tela_Inicial exibida e sem transição em curso.
 - **Política de toque**: `ehTelaDeToque()` é a única condição que separa o comportamento de foco de telas de toque e de mouse/teclado (Suposição 6); reverter é trocar essa condição.
+- **Correção de notas (Req. 27)**: o clique em um `button[data-editar]` do `tbody` chama `abrirEdicao(id)`: preenche T1 a T3 com as notas do registro, mostra o editor, destaca a linha, põe o foco no T1 e rola até o editor (suave, ou sem animação com Movimento_Reduzido). `aoEnviarEdicao` chama `reduzir(EDITAR_LANCAMENTO)`: `EDICAO_INVALIDA` mostra os erros (um por campo, ligados por `aria-describedby`) e foca o primeiro inválido; `EDICAO_SEM_ALTERACAO` fecha e anuncia "Nenhuma nota foi alterada."; `LANCAMENTO_EDITADO` troca a `tr` por uma nova (`criarLancamento`), refaz o resumo, refaz o painel de resultado se ele mostrava o mesmo aluno, fecha o editor, devolve o foco ao botão "Editar" da linha, anuncia "Notas de {nome} atualizadas." e a mensagem do resultado e anima a linha. Escape cancela. `esvaziarHistorico` (limpar, trocar de professor, sair da página) e `sincronizarEdicao` (o aluno passou dos 35) fecham o editor sem guardar.
+- **PDF (Req. 28)**: `renderResumo` habilita ou desabilita `#botao-pdf` conforme haja alunos; `aoBaixarPdf` e `liberarPdf` estão descritos na seção 6.
+- **Arquivos de versões diferentes (Req. 29)**: se `notas.js` não estiver carregado ou tiver `constantes.NIVEL` diferente de `NIVEL_ESPERADO`, ou se `obterRefs` não achar algum elemento (`idsAusentes`), o app não inicia e `avisarArquivosDesencontrados` insere no topo da página um `<p role="alert" class="aviso-versao">` com o texto pedindo para recarregar.
 - **Trocar professor**: se `emCurso` com destino `inicial`, ignora (Req. 15.4); se destino `professor`, cancela a entrada (Req. 15.6). Antes da transição: cancela animações em curso, `estado = reduzir(TROCAR_PROFESSOR).estado`, esvazia saudação, painel, histórico, `#anuncio`, os cinco campos e erros (Req. 3.1, 3.6, 3.7); depois `trocarTela('inicial')`.
 - **Ciclo de vida**: `iniciar()` esvazia os cinco campos (restauração por duplicar/reabrir aba, Req. 18.9, 19.5), garante a Tela_Inicial e foca "Nome do professor". `pagehide` descarta os dados e volta o DOM à Tela_Inicial sem animação. `pageshow` com `event.persisted` repete a limpeza e foca o campo (Req. 19.6). Sem `history.pushState`, sem `location.hash` (Req. 19.9).
 - **Console**: nenhuma chamada a `console.*` (Req. 20.5).
@@ -579,6 +606,40 @@ IIFE com `'use strict'`, sem globais próprias.
 - `calcularParcial(notas, M)` (k = 1 ou 2 faltantes): `somaConhecida` Sk, média parcial `p = floor(Sk / (3 − k))`, rótulos faltantes e as duas Metas; com k fora de 1–2 devolve `null` (Req. 13.4, 13.5).
 - `metaParaAlvo(X, Sk, k)`: `R = 3X − Sk`; `R ≤ 0` → `garantida`; `n = ceil(R / k)` calculado com inteiros (`floor((R + k − 1) / k)`); `n > 1000` → `impossivel`; senão `{ status: 'possivel', centesimos: n }`. Chamada com X = M (aprovação) e X = A (acima da média) (Req. 13.4, 13.6, 13.7).
 - Painel e histórico mostram o selo "Em andamento" (`#475569`, igual nos três temas), sem Classificação nem Posição; cada nota faltante aparece como "—" com `aria-hidden="true"` mais um texto visualmente oculto "sem nota" (Req. 13.5, 13.8).
+
+### 6. `site/js/pdf.js` – resumo em PDF (`window.NotaRapidaPdf`)
+
+Módulo puro (sem DOM, rede ou armazenamento), no mesmo formato de `notas.js`: no navegador vira `window.NotaRapidaPdf`; no Node, `module.exports` (e `require('./notas.js')` para formatar notas). Escrito à mão, sem biblioteca de terceiros (Req. 16.4, 28.11).
+
+```js
+NotaRapidaPdf = {
+  gerarResumo({ lancamentos, geradoEm, tema }), // → Uint8Array com o PDF, ou null sem lançamentos
+  nomeDoArquivo(data),                          // 'notarapida-resumo-2026-10-09.pdf'
+  codificar(texto),                             // texto → bytes WinAnsi (usado nos testes)
+  medirLinhas(texto, maximo, tamanho, negrito, maxLinhas), // larguras das linhas quebradas (testes)
+  formatarPercentual(valor, total)              // '26,5%'
+}
+```
+
+**Arquivo.** PDF 1.4 em ASCII puro: objeto 1 (catálogo, com `/Lang (pt-BR)` e `DisplayDocTitle`), 2 (páginas), 3 e 4 (fontes padrão `Helvetica` e `Helvetica-Bold` com `/WinAnsiEncoding`, sem embutir fonte), 5 (informações: título em UTF-16BE hexadecimal, produtor e data) e, para cada página, um objeto de página e um fluxo de conteúdo; a tabela `xref` guarda as posições medidas e o `/Length` de cada fluxo é exato. Sem `/JavaScript`, `/OpenAction`, `/URI`, `/Launch`, anexos nem formulários (conferido pelos testes).
+
+**Texto (Req. 28.10).** `codificar` troca separadores por espaço, remove controles, hífen opcional, espaços de largura zero e marcas de direção (como o RLO) e acentos soltos, normaliza em NFC e converte para WinAnsi (ASCII, Latin-1 e os extras de 0x80 a 0x9F); par substituto (emoji) vira um `?`; o que não tem equivalente vira a letra sem acento ou `?`; no máximo 400 caracteres por campo. Os intervalos são tabelas numéricas, e não expressões regulares com `\u`. O resultado vai para o arquivo como string hexadecimal (`<48656C6C6F> Tj`), de modo que parênteses, barras e marcação nunca viram comando.
+
+**Medidas (Req. 28.11).** Tabelas de largura da Helvetica e da Helvetica-Bold (de 32 a 126, mais os símbolos e as letras acentuadas especiais), conferidas contra as métricas reais do PyMuPDF (0 divergências em ASCII e Latin-1). `quebrar` divide por palavras, corta palavras maiores que a coluna e, passando de `maxLinhas`, termina a última linha com reticências.
+
+**Página.** A4 em pontos, posições medidas do topo. Primeira página: faixa na cor do tema com acento, logotipo em quatro quartos azul e branco (motivo próprio, não oficial), título e data; cartões de resumo; tabela com colunas fixas (# 24, Aluno 166, T1 a T3 32 cada, Média 44, Situação 130 e Média p/ aprovação 55 pt, num total de 515 pt) e linhas zebradas cuja altura é a da maior célula. Páginas seguintes: faixa compacta e o cabeçalho da tabela repetido. O rodapé (aviso de site não oficial e "Página x de y") entra depois que o total de páginas é conhecido.
+
+**Visão geral da turma (Req. 28.5 a 28.7).** Depois da tabela (22 pt de folga); se não couber no que resta da última página (266 pt de altura), vai para uma página nova. Contém:
+
+- a média da turma: valor (20 pt) e barra de 0 a 10 com as marcas 0, 5 e 10, mais a nota sobre quantos alunos entram na média e quantos estão em andamento;
+- dois painéis lado a lado (251 pt de largura cada, folga de 13 pt, mesma altura): **pizza** (raio 50 pt, fatias a partir do topo no sentido horário; o PDF não tem arco, então cada trecho de até 90 graus vira uma curva de Bézier; uma fatia única é um círculo inteiro; fatias com valor 0 são omitidas) com legenda de quantidade e percentual, e **barras** (eixo com passo 1, 2, 5, 10… e no máximo 5 divisões, barras de até 40 pt, valor sobre cada barra e rótulos embaixo);
+- as mesmas cores da tela: aprovados `#15803D`, reprovados `#B91C1C` e em andamento `#475569`; os alunos em andamento entram nos dois gráficos.
+
+`formatarPercentual` usa `Math.round(valor * 1000 / total) / 10` com vírgula (`26,5%`, `50%`): não força a soma a 100, para que grupos do mesmo tamanho mostrem o mesmo número (arredondar para somar 100 dava 27% e 26% a dois grupos iguais).
+
+**Entrega pelo app (Req. 28.2, 28.12, 28.13).** `aoBaixarPdf` lê `estado.historico` (a fonte, e não a tabela), gera os bytes, cria um `Blob` e um endereço temporário (`URL.createObjectURL`), clica num `<a download>` criado e removido na hora (sem `target`, sem `window.open`) e guarda o endereço em `urlDoPdf`; `liberarPdf` o revoga ao limpar o histórico, ao trocar de professor, ao sair da página e 1 minuto depois. O download de `blob:` por `<a download>` não é governado pela CSP (`default-src 'none'`); verificado no Chrome com a CSP em `<meta>` e o console sem violações. Em outros navegadores a verificação ainda está pendente.
+
+**Testes.** `tests/pdf.test.js` (20 testes): estrutura do arquivo (cabeçalho, `xref`, `/Length`, contagem de páginas, só ASCII), conteúdo, nomes hostis, temas, paginação, visão geral no fim e sem repetição de 1 a 35 alunos, pizza e barras na mesma altura, alunos em andamento, percentuais e propriedades com Unicode qualquer.
 
 ## Data Models
 
@@ -623,7 +684,7 @@ IIFE com `'use strict'`, sem globais próprias.
   somaConhecida, mediaParcial, aprovacao, acima }
 ```
 
-**Somente leitura:** `reduzir` aplica `congelarProfundo(lancamento)` antes de entregá-lo (o objeto, as notas, os limites, as metas e os faltantes são congelados) e `adicionarAoHistorico` devolve uma lista congelada; `HISTORICO_VAZIO` é um array congelado compartilhado. Em modo estrito, qualquer atribuição a um Lançamento ou à lista lança `TypeError` e não altera nada (Req. 9.12, 20.14; testado em `historico-somente-leitura.test.js`).
+**Imutável:** `reduzir` aplica `congelarProfundo(lancamento)` antes de entregá-lo (o objeto, as notas, os limites, as metas e os faltantes são congelados) e `adicionarAoHistorico` devolve uma lista congelada; `HISTORICO_VAZIO` é um array congelado compartilhado. Em modo estrito, qualquer atribuição direta a um Lançamento ou à lista lança `TypeError` e não altera nada (Req. 9.12, 20.14). A correção de notas respeita isso: `EDITAR_LANCAMENTO` monta um Lançamento novo (`montarLancamento`), também congelado, e uma lista nova (cópia com o registro trocado, congelada); o registro antigo nunca é tocado (Req. 27).
 
 `id` é sequencial na sessão. Os textos exibidos (notas, média, rótulo, mensagem) são derivados na renderização pelas funções de `notas.js`, então painel e histórico mostram o mesmo texto para o mesmo Lançamento.
 
@@ -632,7 +693,7 @@ IIFE com `'use strict'`, sem globais próprias.
 ```js
 { tela: 'inicial' | 'professor', nomeProfessor: string | null,
   tratamento: 'neutro' | 'feminino' | 'masculino',
-  resultado: Lancamento | null, historico: Lancamento[] /* 0..20, mais recente primeiro, congelada */,
+  resultado: Lancamento | null, historico: Lancamento[] /* 0..35, mais recente primeiro, congelada */,
   proximoId: number }
 ```
 
@@ -646,9 +707,12 @@ IIFE com `'use strict'`, sem globais próprias.
 | | | `SESSAO_INICIADA` | `tela: 'professor'`, nome aparado, `tratamento` normalizado, demais campos de `estadoInicial()` |
 | `CALCULAR { campos }` | `tela === 'professor'` | `FORMULARIO_INVALIDO { erros, primeiroInvalido }` | inalterado |
 | | | `CALCULO_CONCLUIDO { lancamento }` | `resultado = lancamento`, `historico = adicionarAoHistorico(...)`, `proximoId + 1` |
+| `EDITAR_LANCAMENTO { id, campos }` | `tela === 'professor'` e `id` no histórico | `EDICAO_INVALIDA { erros, primeiroInvalido }` (T1 a T3 pelas regras do formulário, com o nome e a média do registro) | inalterado (mesma referência) |
+| | | `EDICAO_SEM_ALTERACAO` (notas equivalentes às atuais) | inalterado (mesma referência) |
+| | | `LANCAMENTO_EDITADO { lancamento, anterior }` | `historico` com o registro trocado (mesmo `id`, mesma posição); `resultado` troca junto se era o mesmo `id`; `proximoId` não muda |
 | `LIMPAR_HISTORICO` | `tela === 'professor'` | `HISTORICO_LIMPO { haviaItens }` | `historico = []` |
 | `TROCAR_PROFESSOR` | `tela === 'professor'` | `SESSAO_ENCERRADA` | `estadoInicial()` |
-| fora da pré-condição | – | `IGNORADO` | inalterado |
+| fora da pré-condição (inclusive `id` inexistente) | – | `IGNORADO` | inalterado |
 
 ### package.json (testes e servidor local)
 
@@ -760,7 +824,7 @@ Notação: `c` = nota em centésimos (inteiro 0–1000); `S = c1 + c2 + c3`; "no
 
 ### Property 15: Modelo do Histórico_Recente
 
-*For any* sessão e *for any* sequência de `N ≥ 0` envios válidos de `CALCULAR` desde o início da sessão ou desde o último `LIMPAR_HISTORICO` (com repetições idênticas e envios inválidos intercalados), `historico` é igual aos `min(N, 20)` Lançamentos mais recentes em ordem inversa de adição, segundo um modelo de referência (lista sem limite, invertida e cortada em 20); `resultado` é o último Lançamento válido; e cada Lançamento tem nome aprovado (1–100 caracteres), notas de 0 a 1000 e os valores de `calcular`.
+*For any* sessão e *for any* sequência de `N ≥ 0` envios válidos de `CALCULAR` desde o início da sessão ou desde o último `LIMPAR_HISTORICO` (com repetições idênticas e envios inválidos intercalados), `historico` é igual aos `min(N, 35)` Lançamentos mais recentes em ordem inversa de adição, segundo um modelo de referência (lista sem limite, invertida e cortada em 35); `resultado` é o último Lançamento válido; e cada Lançamento tem nome aprovado (1–100 caracteres), notas de 0 a 1000 e os valores de `calcular`.
 
 **Validates: Requirements 4.4, 4.7, 7.1, 9.1, 9.2, 9.3, 9.6, 20.11**
 
@@ -820,15 +884,33 @@ Notação: `c` = nota em centésimos (inteiro 0–1000); `S = c1 + c2 + c3`; "no
 
 ### Property 25: Lançamentos e histórico são imutáveis
 
-*For any* três notas válidas, média de aprovação válida e conjunto de trimestres em branco, o Lançamento produzido por `reduzir` está congelado em todos os níveis; *for any* tentativa de alterar nome, notas, classificação, metas, faltantes ou a lista do histórico (em modo estrito), a tentativa lança `TypeError` e os dados ficam idênticos; e um novo cálculo não altera nenhum Lançamento anterior.
+*For any* três notas válidas, média de aprovação válida e conjunto de trimestres em branco, o Lançamento produzido por `reduzir` está congelado em todos os níveis; *for any* tentativa de alterar diretamente nome, notas, classificação, metas, faltantes ou a lista do histórico (em modo estrito), a tentativa lança `TypeError` e os dados ficam idênticos; um novo cálculo não altera nenhum Lançamento anterior; e uma correção (`EDITAR_LANCAMENTO`) devolve um Lançamento novo, também congelado, sem alterar o antigo.
 
-**Validates: Requirements 9.11, 9.12, 20.14**
+**Validates: Requirements 9.11, 9.12, 20.14, 27.7**
 
 ### Property 26: Recado e data do dia
 
 *For any* data entre 2020 e 2040, `fraseDoDia(data)` é uma das frases de `FRASES` e é a mesma em qualquer hora do mesmo dia; `periodoDoDia` devolve "Bom dia" de 5h a 11h59, "Boa tarde" de 12h a 17h59 e "Boa noite" nos demais horários; `ehDiaDoProfessor` é verdadeiro somente em 15 de outubro; e `formatarDataExtenso` coincide com o `Intl.DateTimeFormat` pt-BR em todos os dias de 2025 a 2029, exceto o "1º" do dia 1.
 
 **Validates: Requirements 24.1, 24.2, 24.3, 24.5**
+
+### Property 27: Corrigir equivale a calcular de novo
+
+*For any* três notas iniciais válidas, média de aprovação válida e novas notas (de 0 a 1000 centésimos ou em branco, com ao menos uma preenchida), `reduzir(EDITAR_LANCAMENTO)` devolve `EDICAO_SEM_ALTERACAO` quando as notas são as mesmas e, nos demais casos, um Lançamento igual (exceto o `id`) ao que `CALCULAR` produziria com o mesmo nome, a mesma média de aprovação e as novas notas; o `id` e a posição do registro se mantêm e nenhum outro registro muda.
+
+**Validates: Requirements 27.6, 27.7, 27.12**
+
+### Property 28: O histórico continua coerente sob qualquer sequência de cálculos, correções e limpezas
+
+*For any* sequência de até 90 ações (`CALCULAR`, `EDITAR_LANCAMENTO` com `id` existente ou não, `LIMPAR_HISTORICO`), o histórico tem no máximo 35 registros congelados com `id`s únicos e em ordem decrescente; Aprovados + Reprovados + Em andamento é igual a Consultados; uma correção nunca muda o nome nem a ordem e deixa os outros registros como os mesmos objetos; e uma correção com `id` inexistente devolve `IGNORADO` com o estado idêntico.
+
+**Validates: Requirements 9.2, 9.6, 9.12, 9.13, 27.11, 27.13**
+
+### Property 29: O PDF é sempre válido e só leva texto como texto
+
+*For any* lista de até 40 Lançamentos com nomes de até 1.000 caracteres e Unicode qualquer (pares substitutos soltos, marcas combinantes, caracteres de direção, parênteses, barras), `gerarResumo` devolve um arquivo só com ASCII, com cabeçalho, `xref`, `/Length` e contagem de páginas corretos e sem `/JavaScript`, `/OpenAction`, `/URI`, `/Launch`, `/EmbeddedFile` nem `/SubmitForm`; `codificar` só produz bytes que a fonte tem e no máximo 400; e nenhuma linha quebrada passa da largura da coluna nem do limite de linhas.
+
+**Validates: Requirements 28.10, 28.11**
 
 ## Error Handling
 
@@ -862,6 +944,10 @@ Notação: `c` = nota em centésimos (inteiro 0–1000); `S = c1 + c2 + c3`; "no
 | Primeiro layout da Tela_do_Professor lento em celular modesto | Aquecimento invisível em ociosidade (`aquecerTelaDoProfessor`) | 16.7 |
 | Texto feito para travar a validação (ReDoS, 1.000 caracteres) | Corte em 1.000 antes de tudo, expressões lineares, testes de tempo | 20.13 |
 | Servidor sob inundação, conexões lentas ou pedidos malformados | Limites e prazos do Servidor_do_Projeto (seção "Hipótese de intrusão") | 25 |
+| Arquivos de versões diferentes no navegador (cache do Pages) | `scripts/versionar.js` na publicação; no app, `NIVEL` e `idsAusentes`: aviso `role="alert"` e o app não inicia | 29 |
+| Navegador sem `Blob` ou `URL.createObjectURL`, ou falha ao gerar o PDF | Anúncio "Não foi possível gerar o PDF neste navegador."; nenhum download | 28.12 |
+| Correção com nota inválida, em branco ou igual à atual | `EDICAO_INVALIDA` (erros nos campos e foco no primeiro) ou `EDICAO_SEM_ALTERACAO` (fecha e avisa); o estado não muda | 27.4, 27.5, 27.6 |
+| O aluno em edição sai do histórico (passou dos 35) ou o histórico é limpo | `sincronizarEdicao` e `esvaziarHistorico` fecham o editor sem guardar | 27.10 |
 
 As funções de `notas.js` não lançam exceção para strings: erros de dado viram valores de retorno (`{ ok: false, erro }`), e `app.js` decide como exibir.
 
@@ -869,20 +955,23 @@ As funções de `notas.js` não lançam exceção para strings: erros de dado vi
 
 ### Camadas
 
-1. **Propriedades (fast-check, Node)**: as 26 propriedades acima, sobre `notas.js`.
+1. **Propriedades (fast-check, Node)**: as 29 propriedades acima, sobre `notas.js`.
 2. **Unitários de exemplo (`node:test`)**: exemplos e limites citados nos requisitos. Poucos, porque as propriedades cobrem a maior parte das entradas.
 3. **Verificações estáticas (`tests/estatico.test.js`)**: leem `site/` como texto.
 4. **Checklist manual no navegador**: CSP em `file://`, animações, acessibilidade, responsividade, tempos e privacidade.
 5. **Servidor (`tests/servidor.test.js`)**: sobe o `scripts/servir.js` em uma porta livre e o ataca por soquetes e por um processo cliente separado (rotas, travessia, cabeçalhos, compressão, métodos, limites, slowloris, ataque distribuído e 30 e 300 professores simultâneos).
 6. **Cadeia de publicação (`tests/supply-chain.test.js`)**: lê o workflow e o `package.json` como texto; cada verificação foi validada por mutação (voltar uma action para tag, tirar uma permissão etc. faz o teste falhar).
 7. **Entradas adversariais (`tests/entradas-adversariais.test.js`)**: tempo e crescimento das validações com textos feitos para travar o navegador.
+8. **Correção de notas (`tests/edicao-historico.test.js`)**: o reducer `EDITAR_LANCAMENTO` (equivalência com o cálculo novo, preservação do restante do histórico, entradas inválidas e hostis, painel de resultado) e as propriedades 27 e 28.
+9. **PDF (`tests/pdf.test.js`)**: valida o arquivo gerado (estrutura e conteúdo), nomes hostis, paginação, a visão geral da turma e a propriedade 29.
+10. **Versões dos arquivos (`tests/versao-dos-arquivos.test.js`)**: `scripts/versionar.js`, o passo do workflow e o contrato `NIVEL` entre `notas.js` e `app.js`.
 
 `app.js` não tem testes de propriedade: renderização, foco e animação não têm relação entrada/saída que ganhe com centenas de execuções no Node, e simular o DOM exigiria outra dependência. As decisões sobre o que exibir ficam em `reduzir`, que é testado por propriedades.
 
 ### Ferramentas e configuração
 
 - `node:test` + `node:assert/strict` (Node 24, a mesma versão do workflow de publicação), `fast-check` 4.10.2 fixo em `devDependencies`.
-- Comando: `npm test` (= `node --test "tests/**/*.test.js"`). Situação atual: 110 testes, 110 passando (cerca de 11 s). No PowerShell, se `npm.ps1` for bloqueado pela política de execução, usar `npm.cmd test`.
+- Comando: `npm test` (= `node --test "tests/**/*.test.js"`). Situação atual: 149 testes, 149 passando (cerca de 12 s). No PowerShell, se `npm.ps1` for bloqueado pela política de execução, usar `npm.cmd test`.
 - Cada propriedade é implementada por **um único** teste, com `fc.assert(prop, { numRuns: 200 })` (mínimo 100) e o comentário:
   `// Feature: student-grade-average, Property 6: Média_Final exata`
 - Em falha, registrar a semente e o contraexemplo reduzido informados pelo fast-check.
@@ -907,7 +996,10 @@ Geradores:
 | `tests/propriedades.test.js` | fast-check (`numRuns: 300`): média, confluência, fração exata, limites por M, monotonicidade em notas e em M, M = 600, faixa da média exibida, ida e volta, histórico, isolamento, metas parciais, saudação | 4, 6–11, 15, 17–22; 16 dentro do isolamento |
 | `tests/injecao.test.js` | Cargas maliciosas nos nomes viram texto literal; cargas nas notas e na média são rejeitadas sem mudar o estado; ações malformadas ignoradas; propriedade de cópia literal (`numRuns: 300`) | 12 (parcial), 14 |
 | `tests/estatico.test.js` | Verificações de texto sobre `site/` (ver abaixo) | – |
-| `tests/historico-somente-leitura.test.js` | Histórico de 20 e imutabilidade, faixas da média, resumo do grupo, carimbo, recado do dia, Dia do Professor, data por extenso e período do dia | 23, 24, 25, 26 |
+| `tests/historico-somente-leitura.test.js` | Histórico de 35 e imutabilidade (o nome do arquivo é do tempo em que o histórico não podia ser corrigido), faixas da média, resumo do grupo, carimbo, recado do dia, Dia do Professor, data por extenso e período do dia | 23, 24, 25, 26 |
+| `tests/edicao-historico.test.js` | 13 testes: correção de notas (reducer), entradas inválidas e hostis, painel de resultado e duas propriedades sobre sequências aleatórias | 27, 28 |
+| `tests/pdf.test.js` | 20 testes: estrutura e conteúdo do PDF, nomes hostis, temas, paginação, visão geral da turma, percentuais e propriedades | 29 |
+| `tests/versao-dos-arquivos.test.js` | 6 testes: versionamento, passo do workflow e contrato `NIVEL` | – |
 | `tests/entradas-adversariais.test.js` | 20 textos adversariais × 9 funções de validação (teto de 25 ms), sessão completa (60 ms), crescimento linear e corte em 1.000 | – |
 | `tests/servidor.test.js` | 22 testes do servidor local, incluindo 30 e 300 professores simultâneos | – |
 | `tests/supply-chain.test.js` | 7 testes do workflow e das dependências | – |
@@ -917,14 +1009,14 @@ As Propriedades 1, 2, 3, 5, 12, 13 e 16 hoje são cobertas por exemplos ou de fo
 ### Verificações estáticas
 
 - CSP em `<meta>` logo após `<meta charset>`, antes de `<link>`/`<script>`, com as diretivas do design e sem `frame-ancestors`, `report-uri`, `report-to`, `sandbox`, `'unsafe-inline'`, `'unsafe-eval'` (Req. 20.2, 20.9, 22.6).
-- HTML sem `<script>` inline, `<style>`, `style=` ou `on*=`; só `js/notas.js` e `js/app.js`, sem `type="module"`; caminhos relativos (Req. 16.4, 20.3, 22.5, 22.7).
+- HTML sem `<script>` inline, `<style>`, `style=` ou `on*=`; só `js/notas.js`, `js/pdf.js` e `js/app.js`, sem `type="module"`; caminhos relativos (Req. 16.4, 20.3, 22.5, 22.7).
 - JS sem `innerHTML`, `outerHTML`, `insertAdjacentHTML`, `document.write`, `eval(`, `new Function`, `localStorage`, `sessionStorage`, `indexedDB`, `document.cookie`, `caches.`, `serviceWorker`, `fetch(`, `XMLHttpRequest`, `WebSocket`, `sendBeacon`, `pushState`, `replaceState`, `location.hash`, `import `, `export `, `console.`, `setAttribute('style'` (Req. 14.6, 19.2, 19.3, 19.9, 20.1, 20.5).
 - `lang="pt-BR"`, título "NotaRápida – Entrar", viewport sem limitação de zoom; cinco campos com `<label for>`, `autocomplete="off"`, `spellcheck="false"`, `maxlength="1000"`; `#tela-professor` com `hidden inert`; ordem dos focáveis no DOM conforme Req. 21.8 e 21.9; textos fixos presentes (Req. 1.1, 2.2, 9.5, 19.8, 21.2, 21.3, 21.14).
 - CSS sem `@font-face`/`@import`, fonte terminando em `sans-serif`, cores hex só em `:root`, com `@media (prefers-reduced-motion: reduce)` (Req. 10.1, 10.2, 10.11).
 - Todos os `id` usados por `app.js` existem no HTML; soma dos arquivos de `site/` ≤ 204.800 bytes (Req. 16.3).
 - CSP com Trusted Types; nenhuma URL externa; `robots.txt` bloqueia robôs de IA e libera buscadores; `ai.txt` e `<meta name="robots" content="noai, noimageai">` presentes; `#aviso-quadro` oculto e sem estilo inline; `_headers` com `frame-ancestors 'none'` e o isolamento de origem cruzada (COOP, COEP e CORP) (Req. 20, 22).
 - Aviso "site não oficial" na faixa, no cartão de entrada e no rodapé; nenhum símbolo oficial (sem brasão, só imagens próprias) (Req. 23).
-- Histórico: sem campo editável, só o botão "Limpar histórico"; o texto da interface cita os mesmos 20 alunos que a lógica guarda (Req. 9, 20.14).
+- Histórico: os únicos campos são T1, T2 e T3 do formulário de edição (o nome não é editável), os botões fixos são "Baixar resumo em PDF" (começa `disabled`), "Limpar histórico", "Salvar alterações" e "Cancelar" (mais o "Editar" que `app.js` cria em cada linha, `data-editar`); o texto da interface cita os mesmos 35 alunos que a lógica guarda (Req. 9, 20.14, 27).
 - Todo `<use href="#…">` aponta para um símbolo do sprite; ordem de foco da Tela_do_Professor (média, aluno, T1, T2, T3, Calcular, Limpar, Trocar professor); só o `<main>` tem `tabindex` (`-1`); marcos únicos (Req. 21.9, 21.17).
 - Todo `:hover` dentro de `@media (hover: hover)`; imagem decorativa com `loading="lazy"`; `overscroll-behavior-y: contain`; `color-scheme: only light`; foco de "Nome do aluno" sempre atrás de `ehTelaDeToque()`; nenhuma declaração de `font-size` abaixo de 14px (exceto o carimbo) (Req. 21.13, 21.15, 21.16).
 - O código não usa `postMessage`, canais, workers nem `window.open` (Req. 20.12).
@@ -934,7 +1026,7 @@ As Propriedades 1, 2, 3, 5, 12, 13 e 16 hoje são cobertas por exemplos ou de fo
 Chrome, Edge e Firefox (Windows), Safari (macOS) e, para layout/toque, Chrome (Android) e Safari (iOS). Computadores nos dois modos: `file://` e servidor local.
 
 - **CSP e rede**: console sem violação de CSP nem erro de carregamento (procedimento da seção Architecture; contingência `file:` se necessário); painel Rede só com os arquivos de `site/` e nada após o carregamento; painel Armazenamento com 0 cookies, 0 entradas de storage, 0 IndexedDB, 0 caches e 0 service workers; payloads `<script>alert(1)</script>` e `<img src=x onerror=alert(1)>` exibidos literalmente (Req. 19.2, 20.1, 20.3, 20.10, 22.1–22.7).
-- **Fluxos e privacidade**: entrar → 21 lançamentos → 20 no histórico → limpar → trocar → mesmo nome → tudo vazio; DOM sem dados após trocar (inclusive `#anuncio`); recarregar, duplicar, reabrir aba e Voltar/Avançar levam à Tela_Inicial vazia e sem sugestões; várias abas independentes; offline e navegação privada funcionam; URL e histórico do navegador inalterados (Req. 3, 9, 18, 19).
+- **Fluxos e privacidade**: entrar → 36 lançamentos → 35 no histórico → corrigir uma nota → baixar o PDF → limpar → trocar → mesmo nome → tudo vazio; DOM sem dados após trocar (inclusive `#anuncio`); recarregar, duplicar, reabrir aba e Voltar/Avançar levam à Tela_Inicial vazia e sem sugestões; várias abas independentes; offline e navegação privada funcionam; URL e histórico do navegador inalterados (Req. 3, 9, 18, 19).
 - **Acessibilidade**: ordem de Tab/Shift+Tab; Enter e Espaço nos botões; foco nunca na tela oculta; anel de foco visível; NVDA + Firefox e VoiceOver + Safari leem rótulos, erros ao focar o campo, saudação como título e o resultado uma vez; contraste conferido em todos os estados; alvos de 44 × 44 px; fontes de 16/14 px; títulos do documento por tela (Req. 1.10, 5.12, 7.9, 21).
 - **Responsividade**: 320, 375, 768, 1023, 1024, 1280 e 1920 px, retrato e paisagem, 1280 px com zoom de 400%, nomes de 100 caracteres com e sem espaços, erros nos quatro campos e 5 lançamentos: sem rolagem horizontal, sobreposição ou corte (Req. 10.3–10.5, 21.1).
 - **Celular simulado (Chrome, `Emulation.*`)**: iPhone SE, iPhone 14 (retrato e paisagem), Pixel 7, Galaxy S8, iPad mini e um celular pequeno, com toque, CPU e rede 4G lenta limitadas. Medido: deslocamento de layout (CLS) 0 (era 0,37 antes das correções), rolagem a 60 quadros por segundo sem quadros lentos, resposta a toques (INP) de cerca de 104 ms no iPhone SE (era 192 ms), maior pintura (LCP) de cerca de 1,0 a 1,1 s em 4G lento, sem rolagem horizontal em nenhum aparelho. Emulação não substitui um aparelho real: a conferência em Android e iOS físicos continua no checklist (Req. 21.6).
@@ -984,3 +1076,14 @@ Os acessos simultâneos também foram tratados como possível tentativa de invas
 | Cadeia de publicação | Actions presas a commit, permissões mínimas, sem segredos | `supply-chain.test.js` |
 
 O que **não** é coberto pelo código: proteção contra ataque em massa de verdade (DDoS) é da borda (GitHub Pages, Cloudflare); `--lan` serve HTTP sem criptografia; as configurações da conta do GitHub (verificação em duas etapas, proteção da branch `main`, secret scanning, Dependabot, e-mail de commit) ficam como recomendações no README; no GitHub Pages, que ignora `_headers`, valem só a CSP em `<meta>` e o anti-quadro por script, e um `<iframe sandbox>` sem scripts mostra o HTML estático inerte (limitação aceita).
+
+### Verificações em navegador real (edição, PDF e versões)
+
+Feitas fora do repositório, com Chrome sem interface controlado por CDP:
+
+- **Edição:** fluxo completo com mouse, toque e teclado reais (clicar em Editar, digitar a nota, clicar em Salvar), no site publicado e abrindo `site/index.html` por `file://`; sequências de uso (baixar o PDF e depois editar, editar o mesmo aluno duas vezes, trocar de professor e editar de novo, editar o último de 35 linhas, Enter no botão Editar). Tudo passou.
+- **Estresse da interface:** 3 sementes de 160 ações aleatórias (calcular, editar, salvar, cancelar, limpar, PDF, trocar de professor), vigiando exceções e invariantes (no máximo 35 linhas, resumo igual às linhas, botão de PDF em sincronia com o histórico, uma só linha destacada com o editor aberto). Sem nenhuma falha.
+- **PDF:** arquivos baixados pelo navegador validados com `pypdf` em modo estrito e renderizados com PyMuPDF (visual conferido com 2, 5 e 34 alunos, tema neutro, feminino e masculino, nomes hostis e alunos em andamento); larguras das fontes conferidas contra as métricas reais da Helvetica.
+- **Versões misturadas:** simulando HTML ou `notas.js` da publicação anterior com o resto novo, o botão "Editar" aparecia e não funcionava, sem aviso; com a defesa do Req. 29, o app mostra o aviso para recarregar. O HTML versionado (como sai da publicação) funciona normalmente.
+- **Layout, contraste e acessibilidade:** 9 larguras de 320 a 1920 px com 35 linhas e com o editor aberto e com erro: 0 problemas de layout, 0 falhas de contraste e 0 violações no axe.
+- **Pendente:** o download do PDF em Firefox e Safari (inclusive iPhone) e a conferência em aparelhos reais.
