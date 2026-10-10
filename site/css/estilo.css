@@ -323,6 +323,16 @@ html.em-quadro noscript {
   background: var(--cor-superficie);
 }
 
+.aviso-versao {
+  margin: 0;
+  padding: var(--esp-4) var(--esp-5);
+  font-weight: 700;
+  text-align: center;
+  color: var(--cor-aviso-texto);
+  background: var(--cor-aviso-fundo);
+  border-bottom: 2px solid var(--cor-aviso-borda);
+}
+
 .pular {
   display: inline-flex;
   align-items: center;

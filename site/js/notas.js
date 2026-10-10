@@ -22,6 +22,9 @@
   // Limites da soma para a média padrão (M = 600): 3·600, 3·800 e 3·900.
   var LIMITES_SOMA = Object.freeze({ NA_MEDIA: 1800, ACIMA: 2400, EXCELENTE: 2700 });
   var MEDIA_PADRAO = 600;
+  // Contrato com app.js: sobe quando app.js passar a depender de algo novo daqui. O app confere
+  // este número para não rodar com arquivos de publicações diferentes (cache do navegador).
+  var NIVEL = 2;
   var TRATAMENTOS = Object.freeze(['feminino', 'masculino', 'neutro']);
 
   var CLASSIFICACOES = Object.freeze([
@@ -763,7 +766,8 @@
       LIMITE_CAMPO: LIMITE_CAMPO,
       TAMANHO_HISTORICO: TAMANHO_HISTORICO,
       LIMITES_SOMA: LIMITES_SOMA,
-      MEDIA_PADRAO: MEDIA_PADRAO
+      MEDIA_PADRAO: MEDIA_PADRAO,
+      NIVEL: NIVEL
     }),
     TRATAMENTOS: TRATAMENTOS,
     CLASSIFICACOES: CLASSIFICACOES,

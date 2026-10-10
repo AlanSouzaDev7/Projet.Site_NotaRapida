@@ -34,8 +34,30 @@
     return; // não inicia o NotaRápida
   }
 
+  // Arquivos de publicações diferentes (o navegador guardou um e buscou outro): em vez de
+  // deixar botões que aparecem e não funcionam, pede para recarregar a página.
+  function avisarArquivosDesencontrados() {
+    function mostrar() {
+      var aviso = document.createElement('p');
+      aviso.className = 'aviso-versao';
+      aviso.setAttribute('role', 'alert');
+      aviso.textContent = 'Os arquivos do NotaRápida no seu navegador são de versões diferentes. ' +
+        'Recarregue a página para continuar: Ctrl+F5 no computador, ou feche e abra o site de novo no celular.';
+      document.body.insertBefore(aviso, document.body.firstChild);
+    }
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', mostrar);
+    } else {
+      mostrar();
+    }
+  }
+
+  // Contrato entre notas.js e app.js (constantes.NIVEL em notas.js).
+  var NIVEL_ESPERADO = 2;
+
   var N = window.NotaRapida;
-  if (!N) {
+  if (!N || !N.constantes || N.constantes.NIVEL !== NIVEL_ESPERADO) {
+    avisarArquivosDesencontrados();
     return;
   }
 
@@ -83,8 +105,15 @@
   var temporizadorPdf = 0;
   var TEMPO_DO_PDF = 60000;
 
+  // Elementos que o index.html carregado não tem: sinal de HTML de outra versão.
+  var idsAusentes = [];
+
   function el(id) {
-    return document.getElementById(id);
+    var elemento = document.getElementById(id);
+    if (!elemento) {
+      idsAusentes.push(id);
+    }
+    return elemento;
   }
 
   function obterRefs() {
@@ -1091,6 +1120,10 @@
 
   function iniciar() {
     obterRefs();
+    if (idsAusentes.length) {
+      avisarArquivosDesencontrados();
+      return;
+    }
     refs.formEntrada.addEventListener('submit', aoEnviarEntrada);
     refs.formNotas.addEventListener('submit', aoEnviarNotas);
     refs.campos.media.addEventListener('input', aoDigitarMedia);
