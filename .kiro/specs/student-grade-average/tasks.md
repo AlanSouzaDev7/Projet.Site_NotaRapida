@@ -395,6 +395,22 @@ Depois da primeira versão (tarefas 1 a 12), o projeto passou por um redesenho v
     - Histórico de 35 alunos corrigível, resumo em PDF com gráficos, versionamento dos arquivos, 149 testes, Requisitos 27 a 29 e a seção 6 do design (`pdf.js`); Requisito 9 reescrito e Suposições 7 a 10
     - _Requirements: 22.1, 22.2_
 
+- [ ] 26. Auditoria de segurança e isolamento do site
+  - [x] 26.1 Conferir versões e rodar a bateria de ataques
+    - Local, GitHub e site publicado iguais; mais de 25 ataques no Chrome real e 1.500 PDFs hostis (ver design, "Auditoria de segurança")
+    - _Requirements: 19, 20, 26, 28.10_
+  - [x] 26.2 Esconder o conteúdo até o app iniciar
+    - `html:not(.app-pronto)` em `estilo.css`; `app.js` marca `app-pronto` no fim de `iniciar()`; `tests/sem-script.test.js`
+    - _Requirements: 30.1, 30.2_
+  - [x] 26.3 Proteger a `main` e ligar o Dependabot
+    - Sem force push nem exclusão, histórico linear, vale para administradores; alertas e correções automáticas; `.github/dependabot.yml`
+    - _Requirements: 30.5_
+  - [ ] 26.4 Migrar a publicação para o Cloudflare Pages
+    - Conta e conexão com o GitHub feitas pelo dono da conta; build com testes e `scripts/versionar.js`; conferir os cabeçalhos de `_headers` no ar e repetir os ataques de mesma origem
+    - _Requirements: 30.3_
+  - [ ] 26.5 Trocar a cópia do GitHub Pages por uma página que aponta para o novo endereço
+    - _Requirements: 30.4_
+
 ## Notes
 
 - Tarefas marcadas com `*` são opcionais e podem ser puladas.
@@ -409,7 +425,8 @@ Depois da primeira versão (tarefas 1 a 12), o projeto passou por um redesenho v
 ```json
 {
   "waves": [
-    { "id": 0, "tasks": ["14.1", "14.2"] }
+    { "id": 0, "tasks": ["14.1", "14.2", "26.4"] },
+    { "id": 1, "tasks": ["26.5"] }
   ]
 }
 ```

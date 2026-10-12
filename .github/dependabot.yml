@@ -1,0 +1,16 @@
+# Atualizações automáticas: as actions do workflow (presas a um commit exato) e a única
+# dependência de desenvolvimento (fast-check, só para testes). Cada atualização chega como
+# pull request e passa pelos testes antes de qualquer merge; nada é publicado sozinho.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+    open-pull-requests-limit: 5
+
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: monthly
+    open-pull-requests-limit: 5

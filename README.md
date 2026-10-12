@@ -86,7 +86,7 @@ npm install
 npm test
 ```
 
-São 149 testes em `tests/` (`node:test` + `fast-check`, versão fixa em `package.json`):
+São 152 testes em `tests/` (`node:test` + `fast-check`, versão fixa em `package.json`):
 
 - `leitor-validador.test.js`: formatos de nota aceitos e rejeitados, limites, ordem e texto das mensagens, nomes.
 - `propriedades.test.js`: propriedades da média, classificação, histórico (mínimo entre N e 35), isolamento entre professores e resultado parcial.
@@ -99,6 +99,7 @@ São 149 testes em `tests/` (`node:test` + `fast-check`, versão fixa em `packag
 - `servidor.test.js`: o servidor local (rotas fechadas, travessia de diretório, cabeçalhos, compressão, ETag, métodos, pedidos malformados, limites por endereço, conexões lentas, ataque distribuído, 30 e 300 professores simultâneos).
 - `supply-chain.test.js`: o workflow de publicação (actions presas a commit, permissões mínimas, sem segredos, sem `pull_request_target`) e as dependências.
 - `versao-dos-arquivos.test.js`: o versionamento dos endereços na publicação (`scripts/versionar.js`), o passo do workflow e o contrato entre `notas.js` e `app.js` que dispara o aviso de arquivos de versões diferentes.
+- `sem-script.test.js`: sem scripts (JavaScript desligado ou quadro com `sandbox`), nada do NotaRápida aparece além do aviso; `app.js` só mostra o conteúdo no fim de `iniciar()`.
 
 No Windows, se o PowerShell bloquear `npm` por política de execução, use `npm.cmd`. Se aparecer `UNABLE_TO_VERIFY_LEAF_SIGNATURE` (antivírus ou proxy inspecionando HTTPS), rode com `$env:NODE_OPTIONS='--use-system-ca'`.
 
@@ -129,11 +130,12 @@ Se isso aparecer logo depois de uma publicação, recarregue com **Ctrl+F5**.
 
 ### Configurações do GitHub que o código não consegue fazer
 
-Fazem parte da segurança, mas ficam na conta e no repositório (Settings):
+Fazem parte da segurança, mas ficam na conta e no repositório (Settings). Situação em 11/10/2026:
 
-- Ative a **verificação em duas etapas** na conta.
-- Proteja a branch `main` (exigir pull request e restringir quem pode fazer push): cada push em `main` publica o site.
-- Ative **secret scanning** e **push protection**, e o **Dependabot** para actions e npm (as actions presas a commit não se atualizam sozinhas).
+- **Verificação em duas etapas** na conta: **pendente, só o dono da conta ativa** (github.com/settings/security). É a defesa mais importante do site: quem entra na conta publica o que quiser.
+- **Branch `main` protegida** (feito): sem force push, sem exclusão, histórico linear, e a regra vale também para administradores. O push direto continua permitido; exigir pull request é um passo a mais possível.
+- **Secret scanning** e **push protection**: ligados.
+- **Dependabot**: alertas e correções automáticas ligados; `.github/dependabot.yml` pede atualizações mensais das actions (presas a commit, não se atualizam sozinhas) e do npm. Cada atualização chega como pull request; nada é publicado sozinho.
 - O e-mail do autor dos commits aparece no histórico se o repositório for público. Para escondê-lo, use o e-mail de privacidade `ID+usuario@users.noreply.github.com` (Settings → Emails) e marque "Keep my email addresses private".
 
 ## Segurança
@@ -147,6 +149,7 @@ Fazem parte da segurança, mas ficam na conta e no repositório (Settings):
 - **PDF sem comandos injetáveis**: o gerador é escrito à mão (nenhuma biblioteca de terceiros) e todo texto vai para o arquivo em hexadecimal, já convertido para a codificação da fonte; um nome com parênteses, barras ou marcação aparece como texto comum. O PDF não tem JavaScript, links, ações automáticas nem anexos. As larguras das fontes foram conferidas contra as métricas reais da Helvetica.
 - **Limite de entrada**: `maxlength="1000"` nos campos e corte em 1000 caracteres também no JavaScript, caso o atributo seja removido. As validações não travam com textos adversariais (testes de tempo).
 - **Anti-quadro**: se a página for aberta dentro de um `<iframe>` de outro site, o app não inicia e mostra apenas "O NotaRápida não pode ser exibido dentro de outro site.".
+- **Nada aparece sem o app**: a faixa, as telas e o rodapé ficam escondidos até `app.js` terminar de iniciar (`<html class="app-pronto">`). Sem scripts (JavaScript desligado ou um quadro com `sandbox` sem `allow-scripts`, onde o anti-quadro não roda) fica só "Ative o JavaScript para usar o NotaRápida."; antes, o formulário aparecia inerte e servia de isca para outro site sobrepor.
 - **Puxar para atualizar no celular** (`overscroll-behavior-y: contain`) não recarrega a página por engano e apaga os dados.
 
 ### O servidor local (`scripts/servir.js`)
@@ -175,8 +178,30 @@ Limite do que isto prova: proteção contra ataque em massa de verdade (DDoS) s�
 ### Limitações do GitHub Pages
 
 - Não permite cabeçalhos HTTP personalizados. Por isso `frame-ancestors`, `X-Frame-Options`, HSTS com `includeSubDomains`, `Permissions-Policy`, COOP, COEP e CORP **não se aplicam** lá. O arquivo `site/_headers` traz esses cabeçalhos para Netlify ou Cloudflare Pages e é ignorado pelo GitHub Pages (o `scripts/servir.js` também os usa).
-- O anti-quadro em JavaScript é mais fraco que `frame-ancestors`: um quadro com `sandbox` sem scripts impede o app de rodar (ele fica inutilizável, mas o HTML estático aparece).
-- O GitHub Pages já serve por HTTPS com o certificado do `github.io`.
+- O anti-quadro em JavaScript é mais fraco que `frame-ancestors`; num quadro com `sandbox` sem scripts o app não roda e, desde a auditoria de 11/10/2026, também não aparece.
+- O GitHub Pages já serve por HTTPS com o certificado do `github.io` (e o `github.io` está na lista de HSTS pré-carregado dos navegadores: até o primeiro acesso por `http://` vira `https://` antes de sair do computador).
+- **Endereço compartilhado (o risco mais sério encontrado).** Todos os projetos publicados por uma conta no GitHub Pages ficam na mesma origem, `https://alansouzadev7.github.io`. Para o navegador, são o mesmo site, e a CSP do NotaRápida não separa uma página da outra. Dois ataques funcionaram na simulação:
+  - outro projeto da conta, se tiver uma falha, abre o NotaRápida com `window.open` e lê as notas, vê o que o professor digita e altera a tabela;
+  - o repositório `AlanSouzaDev7.github.io` (site da raiz, hoje inexistente), se criado por quem tomar a conta, registra um Service Worker que reescreve o `app.js` do NotaRápida para todas as visitas seguintes daquele navegador.
+
+  Nenhuma checagem dentro do código resolve isso: a página atacante tem os mesmos poderes do site (consegue esconder o `window.opener` e apagar qualquer Service Worker de defesa). A correção é dar ao NotaRápida uma origem só dele: a migração para o **Cloudflare Pages** está em preparação (lá o `site/_headers` passa a valer, com COOP, `frame-ancestors` e `X-Frame-Options`). Até lá: verificação em duas etapas na conta e nenhum projeto de terceiros publicado nela.
+
+### Auditoria de segurança (11/10/2026)
+
+Contra o site publicado, num Chrome real. Antes, foi conferido que o computador local, o GitHub e o site publicado estavam na mesma versão (`d9f2111`, byte a byte).
+
+| Ataque | Resultado |
+|---|---|
+| XSS em todos os campos (professor, aluno, T1 a T3, média, editor): 31 cargas, entre elas mXSS, `<base>`, meta refresh, `__proto__`, RLO, NUL e 200 mil caracteres | nada executou nem foi injetado |
+| XSS e poluição de protótipo pelo endereço (`?`, `#`, caminho) | ignorados |
+| Código já dentro da página: `innerHTML`, `eval`, `Function`, `setTimeout(texto)`, `document.write`, `import()` externo | bloqueados (CSP e Trusted Types) |
+| Exfiltração por fetch, imagem, WebSocket e `sendBeacon` | bloqueada; nada saiu pela rede |
+| Rastros depois de 40 alunos e um PDF | nenhum (cookie, storage, IndexedDB, cache, Service Worker, `window.name`) |
+| Notas traiçoeiras (`10,001`, `1e1`, `0x0A`, `Infinity`, `１０`, `٩`, espaços invisíveis) e `data-id` adulterado | nenhuma nota fora de 0 a 10; nenhum outro registro editado |
+| Entradas de 1 MB e 3.000 cálculos em rajada | validação em até 16 ms; histórico em 35; 15 MB de memória |
+| Injeção no PDF (1.500 arquivos com `/JavaScript`, `/Launch`, `/URI`, `) Tj`) | 0 problemas; válido no modo estrito do pypdf |
+| Quadros de outra origem (comum, com e sem scripts) | só o aviso aparece (o caso sem scripts foi corrigido nesta auditoria) |
+| Outro projeto na mesma origem e Service Worker na raiz | **funcionaram**; ver "Endereço compartilhado" acima |
 
 ### Anti-IA (**melhor esforço**, depende da boa vontade de cada robô)
 
@@ -207,5 +232,6 @@ scripts/servir.js      servidor local (sem dependências)
 scripts/versionar.js   põe a versão nos endereços do index.html na publicação
 tests/                 só Node; a página nunca os carrega
 .github/workflows/     testa e publica site/
+.github/dependabot.yml atualizações mensais das actions e do npm
 .kiro/specs/           requisitos, design e tarefas
 ```

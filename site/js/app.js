@@ -1149,6 +1149,10 @@
     // Esvazia campos restaurados pelo navegador (duplicar/reabrir aba).
     restaurarTelaInicial(true);
     agendarAquecimento();
+
+    // Só agora o conteúdo aparece (estilo.css o esconde até aqui): fora de quadro,
+    // com os arquivos da mesma versão e tudo ligado.
+    document.documentElement.classList.add('app-pronto');
   }
 
   if (document.readyState === 'loading') {

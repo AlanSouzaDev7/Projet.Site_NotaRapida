@@ -1075,7 +1075,7 @@ Os acessos simultâneos também foram tratados como possível tentativa de invas
 | Vazamento de memória do servidor | Baldes e bloqueios vencidos são limpos periodicamente; contadores por conexão e por endereço são removidos ao fechar | 36.000 pedidos hostis: heap estável (5,3 a 6,2 MB depois da coleta) |
 | Cadeia de publicação | Actions presas a commit, permissões mínimas, sem segredos | `supply-chain.test.js` |
 
-O que **não** é coberto pelo código: proteção contra ataque em massa de verdade (DDoS) é da borda (GitHub Pages, Cloudflare); `--lan` serve HTTP sem criptografia; as configurações da conta do GitHub (verificação em duas etapas, proteção da branch `main`, secret scanning, Dependabot, e-mail de commit) ficam como recomendações no README; no GitHub Pages, que ignora `_headers`, valem só a CSP em `<meta>` e o anti-quadro por script, e um `<iframe sandbox>` sem scripts mostra o HTML estático inerte (limitação aceita).
+O que **não** é coberto pelo código: proteção contra ataque em massa de verdade (DDoS) é da borda (GitHub Pages, Cloudflare); `--lan` serve HTTP sem criptografia; as configurações da conta do GitHub (verificação em duas etapas, proteção da branch `main`, secret scanning, Dependabot, e-mail de commit) ficam como recomendações no README; no GitHub Pages, que ignora `_headers`, valem só a CSP em `<meta>` e o anti-quadro por script, e um `<iframe sandbox>` sem scripts não mostra mais nada além do aviso (Req. 30.1). O risco que sobra no GitHub Pages é a origem compartilhada (ver a auditoria abaixo).
 
 ### Verificações em navegador real (edição, PDF e versões)
 
@@ -1087,3 +1087,12 @@ Feitas fora do repositório, com Chrome sem interface controlado por CDP:
 - **Versões misturadas:** simulando HTML ou `notas.js` da publicação anterior com o resto novo, o botão "Editar" aparecia e não funcionava, sem aviso; com a defesa do Req. 29, o app mostra o aviso para recarregar. O HTML versionado (como sai da publicação) funciona normalmente.
 - **Layout, contraste e acessibilidade:** 9 larguras de 320 a 1920 px com 35 linhas e com o editor aberto e com erro: 0 problemas de layout, 0 falhas de contraste e 0 violações no axe.
 - **Pendente:** o download do PDF em Firefox e Safari (inclusive iPhone) e a conferência em aparelhos reais.
+
+### Auditoria de segurança (11/10/2026)
+
+Antes, conferido que o computador local, o GitHub e o site publicado estavam na mesma versão (`d9f2111`, arquivo por arquivo). Depois, mais de 25 ataques num Chrome real (CDP), a maioria contra o site publicado, e 1.500 PDFs com nomes hostis.
+
+- **Resistiram:** XSS em todos os campos e pelo endereço; `eval`, `Function`, `innerHTML` e `import()` (CSP e Trusted Types); exfiltração por fetch, imagem, WebSocket e `sendBeacon`; rastros no navegador; notas traiçoeiras e `data-id` adulterado; entradas de 1 MB e rajadas; injeção no PDF; quadros comuns e com scripts; primeiro acesso por `http://` (HSTS pré-carregado do `github.io`).
+- **Corrigido:** num quadro com `sandbox` sem scripts, o HTML aparecia inerte; agora nada aparece além do aviso (Req. 30.1, `sem-script.test.js`).
+- **Não se corrige no código:** no GitHub Pages, todos os projetos da conta estão na mesma origem. Na simulação, uma página de outro projeto abriu o NotaRápida com `window.open`, leu as notas, viu a digitação e alterou a tabela; e um Service Worker registrado pela raiz da origem reescreveu o `app.js`. Recusar iniciar com `window.opener` não adianta (o atacante anula o opener e continua lendo), e um Service Worker de defesa pode ser apagado por qualquer página da mesma origem. Por isso a migração para o Cloudflare Pages (Req. 30.3 e 30.4).
+- **Na conta:** `main` protegida e Dependabot ligado (Req. 30.5); verificação em duas etapas só o dono da conta ativa.

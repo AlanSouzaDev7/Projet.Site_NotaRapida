@@ -304,6 +304,17 @@ h2 {
   text-align: center;
 }
 
+/* O conteúdo só aparece quando app.js confirma que pode iniciar (classe app-pronto).
+   Sem scripts (JavaScript desligado ou um quadro com sandbox sem scripts) nada do
+   NotaRápida é desenhado: não sobra um formulário de aparência real, mas inerte,
+   para outro site sobrepor. Fica só o aviso do <noscript>. */
+html:not(.app-pronto) .palco,
+html:not(.app-pronto) .faixa-gov,
+html:not(.app-pronto) .rodape,
+html:not(.app-pronto) .pular {
+  display: none !important;
+}
+
 /* Página aberta dentro de um quadro de outro site (classe aplicada por app.js):
    todo o conteúdo some e fica apenas o aviso. */
 html.em-quadro .palco,

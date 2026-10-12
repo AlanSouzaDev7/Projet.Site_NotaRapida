@@ -542,7 +542,7 @@ Como a divisão por 3 pode gerar dízimas (ex.: (5,99 + 6 + 6) / 3 = 5,99666...)
 4. THE Workflow_de_Publicação SHALL ser disparado somente por push na branch `main` e manualmente, nunca por `pull_request_target`, SHALL não usar segredos e SHALL não executar texto vindo de eventos, publicando somente a pasta `site/`.
 5. THE package.json SHALL conter somente `devDependencies`, com versões exatas, sem scripts de instalação, e o `package-lock.json` SHALL registrar a integridade das dependências; `npm audit` SHALL informar 0 vulnerabilidades na entrega.
 6. THE pasta `site/` SHALL não conter mapas de código, segredos, caminhos locais de máquina nem endereços de e-mail, e nenhum arquivo rastreado pelo repositório SHALL conter segredos (varredura da árvore e do histórico sem achados na entrega).
-7. THE NotaRápida SHALL registrar como recomendações fora do código (no README) a verificação em duas etapas da conta, a proteção da branch `main` (cada push publica o site), o secret scanning e a push protection, o Dependabot para actions e npm e o uso do e-mail de privacidade do GitHub nos commits.
+7. THE NotaRápida SHALL registrar como recomendações fora do código (no README) a verificação em duas etapas da conta, a proteção da branch `main` (cada push publica o site), o secret scanning e a push protection, o Dependabot para actions e npm e o uso do e-mail de privacidade do GitHub nos commits; o README SHALL dizer o que já está feito (Requisito 30, critério 5).
 8. THE Workflow_de_Publicação SHALL executar, antes de enviar a pasta `site/` ao Pages, o passo "Versionar os endereços dos arquivos do site" (Requisito 29, critério 1), passando o hash do commit por variável de ambiente (`VERSAO: ${{ github.sha }}`) e sem usar `${{ }}` dentro do comando, e esse passo SHALL ser coberto por testes.
 
 ### Requirement 27: Correção de notas do histórico
@@ -599,3 +599,15 @@ Como a divisão por 3 pode gerar dízimas (ex.: (5,99 + 6 + 6) / 3 = 5,99666...)
 4. THE aviso SHALL dizer "Os arquivos do NotaRápida no seu navegador são de versões diferentes. Recarregue a página para continuar: Ctrl+F5 no computador, ou feche e abra o site de novo no celular.", ser inserido no topo da página só com `textContent`, ter `role="alert"` e continuar legível mesmo com a folha de estilo de outra versão.
 5. THE NIVEL SHALL subir quando o app passar a depender de algo novo de `notas.js`, e os testes SHALL conferir que o valor esperado é o publicado e que tudo o que `app.js` usa de `notas.js` existe no módulo.
 6. THE Servidor_do_Projeto SHALL ignorar a parte `?v=` do endereço ao procurar a rota fechada (Requisito 25, critério 3), servindo normalmente `js/app.js?v=…`.
+
+### Requirement 30: Isolamento do site e conteúdo só com o app (não funcional)
+
+**User Story:** Como professor, quero que nenhuma outra página consiga ler ou alterar as notas que eu digito nem exibir uma cópia falsa do NotaRápida, para confiar no que vejo na tela.
+
+#### Acceptance Criteria
+
+1. THE NotaRápida SHALL manter escondidos a faixa de aviso, as telas, o rodapé e o atalho "Ir para o conteúdo" até `app.js` terminar de iniciar (classe `app-pronto` no elemento `html`, adicionada só no fim de `iniciar()`, depois do anti-quadro e das conferências do Requisito 29); sem scripts (JavaScript desligado ou um quadro com `sandbox` sem `allow-scripts`), SHALL aparecer somente "Ative o JavaScript para usar o NotaRápida.".
+2. THE aviso de JavaScript desligado, o aviso de quadro e o aviso de arquivos de versões diferentes SHALL ficar fora do que é escondido pelo critério 1.
+3. THE NotaRápida SHALL ser publicado numa origem que não seja compartilhada com outros sites, para que nenhuma outra página da mesma origem possa abri-lo com `window.open` e ler o DOM, nem registrar um Service Worker que o controle; a origem compartilhada `alansouzadev7.github.io` do GitHub Pages SHALL ser substituída pelo Cloudflare Pages, onde o `site/_headers` vale (COOP `same-origin`, `frame-ancestors 'none'`, `X-Frame-Options: DENY`, `nosniff`).
+4. WHEN o site passar a ser servido na nova origem, THE cópia no GitHub Pages SHALL ser trocada por uma página que só aponta para o novo endereço, sem o app.
+5. THE repositório SHALL ter a branch `main` protegida contra force push e exclusão, com histórico linear e regra válida também para administradores, e o Dependabot SHALL estar ligado (alertas, correções automáticas e `.github/dependabot.yml` para actions e npm).
