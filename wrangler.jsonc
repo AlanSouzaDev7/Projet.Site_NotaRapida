@@ -1,0 +1,14 @@
+// Publicação no Cloudflare (Worker só com arquivos estáticos, sem código no servidor).
+// O build (npm run publicar:cloudflare) testa e versiona; o deploy (npx wrangler deploy)
+// envia SOMENTE a pasta site/. Lá o site/_headers vale: CSP com frame-ancestors, COOP,
+// X-Frame-Options, nosniff e os demais cabeçalhos de segurança.
+{
+  "name": "projet-site-notarapida",
+  "compatibility_date": "2026-10-01",
+  "assets": {
+    "directory": "./site",
+    "not_found_handling": "none"
+  },
+  "workers_dev": true,
+  "preview_urls": false
+}

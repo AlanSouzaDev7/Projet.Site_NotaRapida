@@ -61,10 +61,11 @@ test('o fluxo só roda em push na main e manualmente: nunca com código de forks
   assert.match(semComentarios, /on:\s*\n\s+push:\s*\n\s+branches:\s*\[main\]\s*\n\s+workflow_dispatch:/);
 });
 
-test('o fluxo não usa segredos, não executa texto vindo de eventos e publica só site/', () => {
+test('o fluxo não usa segredos, não executa texto vindo de eventos e publica só a página de aviso', () => {
   assert.doesNotMatch(semComentarios, /secrets\./);
   assert.doesNotMatch(semComentarios, /\$\{\{\s*github\.(event|head_ref)/);
-  assert.match(semComentarios, /path:\s*site\s*$/m);
+  assert.match(semComentarios, /path:\s*redirecionamento\s*$/m);
+  assert.doesNotMatch(semComentarios, /path:\s*site\s*$/m, 'o app não volta para o GitHub Pages');
 });
 
 test('dependências: só devDependencies, versão exata e sem scripts de instalação', () => {

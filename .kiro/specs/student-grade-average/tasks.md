@@ -395,7 +395,7 @@ Depois da primeira versão (tarefas 1 a 12), o projeto passou por um redesenho v
     - Histórico de 35 alunos corrigível, resumo em PDF com gráficos, versionamento dos arquivos, 149 testes, Requisitos 27 a 29 e a seção 6 do design (`pdf.js`); Requisito 9 reescrito e Suposições 7 a 10
     - _Requirements: 22.1, 22.2_
 
-- [ ] 26. Auditoria de segurança e isolamento do site
+- [x] 26. Auditoria de segurança e isolamento do site
   - [x] 26.1 Conferir versões e rodar a bateria de ataques
     - Local, GitHub e site publicado iguais; mais de 25 ataques no Chrome real e 1.500 PDFs hostis (ver design, "Auditoria de segurança")
     - _Requirements: 19, 20, 26, 28.10_
@@ -405,10 +405,11 @@ Depois da primeira versão (tarefas 1 a 12), o projeto passou por um redesenho v
   - [x] 26.3 Proteger a `main` e ligar o Dependabot
     - Sem force push nem exclusão, histórico linear, vale para administradores; alertas e correções automáticas; `.github/dependabot.yml`
     - _Requirements: 30.5_
-  - [ ] 26.4 Migrar a publicação para o Cloudflare Pages
-    - Feito: `npm run publicar:cloudflare` (instala sem scripts, testa e versiona com `versionar.js --commit-do-build`: o hash do `git rev-parse HEAD` do clone e, só sem git, de `$CF_PAGES_COMMIT_SHA` ou `$WORKERS_CI_COMMIT_SHA`, sempre validado; falha sem hash válido. Os dois primeiros builds pararam com a variável vazia e com `main`), teste em `supply-chain.test.js` e o passo a passo no README. Falta: conta e conexão com o GitHub, feitas pelo dono da conta; depois, conferir os cabeçalhos de `_headers` no ar e repetir os ataques de mesma origem
+  - [x] 26.4 Migrar a publicação para o Cloudflare
+    - Feito: `npm run publicar:cloudflare` (instala sem scripts, testa e versiona com `versionar.js --commit-do-build`: o hash do `git rev-parse HEAD` do clone e, só sem git, de `$CF_PAGES_COMMIT_SHA` ou `$WORKERS_CI_COMMIT_SHA`, sempre validado; falha sem hash válido. Os dois primeiros builds pararam com a variável vazia e com `main`), teste em `supply-chain.test.js` e o passo a passo no README. Publicado em https://projet-site-notarapida.alanmartinsdesouza07.workers.dev/ (Worker só de arquivos estáticos, `wrangler.jsonc` com só `site/`, 404 de verdade e sem prévias); cabeçalhos de `_headers` conferidos no ar e ataques repetidos: todos resistiram, quadros recusados pelo navegador e `window.open` sem acesso (COOP)
     - _Requirements: 30.3_
-  - [ ] 26.5 Trocar a cópia do GitHub Pages por uma página que aponta para o novo endereço
+  - [x] 26.5 Trocar a cópia do GitHub Pages por uma página que aponta para o novo endereço
+    - `redirecionamento/` (index.html e 404.html, sem scripts) publicado pelo workflow no lugar de `site/`; `tests/publicacao.test.js`
     - _Requirements: 30.4_
 
 ## Notes
@@ -425,8 +426,7 @@ Depois da primeira versão (tarefas 1 a 12), o projeto passou por um redesenho v
 ```json
 {
   "waves": [
-    { "id": 0, "tasks": ["14.1", "14.2", "26.4"] },
-    { "id": 1, "tasks": ["26.5"] }
+    { "id": 0, "tasks": ["14.1", "14.2"] }
   ]
 }
 ```

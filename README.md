@@ -1,6 +1,8 @@
 # NotaRápida
 
-**Acesse o site: [alansouzadev7.github.io/Projet.Site_NotaRapida](https://alansouzadev7.github.io/Projet.Site_NotaRapida/)**
+**Acesse o site: [projet-site-notarapida.alanmartinsdesouza07.workers.dev](https://projet-site-notarapida.alanmartinsdesouza07.workers.dev/)**
+
+O endereço antigo (alansouzadev7.github.io/Projet.Site_NotaRapida) agora só mostra um aviso e leva ao novo; veja [Publicação](#publicação).
 
 Site de uma página para calcular a média trimestral de alunos: o professor informa o nome, lança o nome do aluno e as notas T1, T2 e T3 e vê a média final, a situação (aprovado ou reprovado), a posição em relação à média e a lista dos **35 últimos alunos consultados**, que podem ser corrigidos e resumidos em um PDF. Com trimestres em branco, mostra quanto falta para a aprovação e para ficar acima da média.
 
@@ -86,7 +88,7 @@ npm install
 npm test
 ```
 
-São 155 testes em `tests/` (`node:test` + `fast-check`, versão fixa em `package.json`):
+São 160 testes em `tests/` (`node:test` + `fast-check`, versão fixa em `package.json`):
 
 - `leitor-validador.test.js`: formatos de nota aceitos e rejeitados, limites, ordem e texto das mensagens, nomes.
 - `propriedades.test.js`: propriedades da média, classificação, histórico (mínimo entre N e 35), isolamento entre professores e resultado parcial.
@@ -98,18 +100,32 @@ São 155 testes em `tests/` (`node:test` + `fast-check`, versão fixa em `packag
 - `estatico.test.js`: CSP, ausência de código inline e de APIs proibidas (inclusive `postMessage`, workers e `window.open`), atributos dos campos, aviso de site não oficial, ausência de símbolos oficiais, ordem de foco (inclusive o editor de notas), histórico editável só pelo formulário de edição, `:hover` só em dispositivos com mouse, política de foco em telas de toque, nenhum texto abaixo de 14 px, `_headers`, robots.txt, tamanho do site.
 - `servidor.test.js`: o servidor local (rotas fechadas, travessia de diretório, cabeçalhos, compressão, ETag, métodos, pedidos malformados, limites por endereço, conexões lentas, ataque distribuído, 30 e 300 professores simultâneos).
 - `supply-chain.test.js`: o workflow de publicação (actions presas a commit, permissões mínimas, sem segredos, sem `pull_request_target`), as dependências e o build do Cloudflare Pages (`publicar:cloudflare`: instala sem scripts, testa e versiona).
-- `versao-dos-arquivos.test.js`: o versionamento dos endereços na publicação (`scripts/versionar.js`), o passo do workflow e o contrato entre `notas.js` e `app.js` que dispara o aviso de arquivos de versões diferentes.
+- `versao-dos-arquivos.test.js`: o versionamento dos endereços na publicação (`scripts/versionar.js`, chamado pelo build do Cloudflare) e o contrato entre `notas.js` e `app.js` que dispara o aviso de arquivos de versões diferentes.
+- `publicacao.test.js`: o `wrangler.jsonc` (só `site/`, 404 de verdade, sem prévias) e a página de aviso do GitHub Pages (sem scripts nem estilos, só o endereço novo), além do link no topo deste README.
 - `sem-script.test.js`: sem scripts (JavaScript desligado ou quadro com `sandbox`), nada do NotaRápida aparece além do aviso; `app.js` só mostra o conteúdo no fim de `iniciar()`.
 
 No Windows, se o PowerShell bloquear `npm` por política de execução, use `npm.cmd`. Se aparecer `UNABLE_TO_VERIFY_LEAF_SIGNATURE` (antivírus ou proxy inspecionando HTTPS), rode com `$env:NODE_OPTIONS='--use-system-ca'`.
 
-## Publicação (GitHub Pages)
+## Publicação
 
-O workflow `.github/workflows/pages.yml` roda a cada push em `main` (e manualmente): o job `testar` executa `npm ci --ignore-scripts` e `npm test` e, se passar, o job `publicar` envia **somente a pasta `site/`**.
+O app é publicado no **Cloudflare**, como um Worker só de arquivos estáticos (nenhum código roda no servidor), em https://projet-site-notarapida.alanmartinsdesouza07.workers.dev/. O endereço é uma origem só do NotaRápida (`workers.dev` está na Public Suffix List) e lá o `site/_headers` vale: CSP com `frame-ancestors 'none'`, `X-Frame-Options: DENY`, `Cross-Origin-Opener-Policy: same-origin`, `nosniff`, HSTS e os demais.
 
-1. Envie o código para a branch `main` do repositório https://github.com/AlanSouzaDev7/Projet.Site_NotaRapida.
-2. Em Settings → Pages → Build and deployment, escolha **GitHub Actions** como fonte.
-3. Após o primeiro deploy, o site fica em https://alansouzadev7.github.io/Projet.Site_NotaRapida/.
+### Cloudflare (o app)
+
+A cada push em `main`, o Cloudflare clona o repositório e roda:
+
+- **Build command:** `npm run publicar:cloudflare`: instala sem scripts (`npm ci --ignore-scripts`), roda os testes e grava a versão do commit nos endereços do `index.html` (`scripts/versionar.js --commit-do-build`). Se um teste falhar ou não houver hash válido, o build para e nada é publicado.
+- **Deploy command:** `npx wrangler deploy`, que lê o `wrangler.jsonc`: envia **somente a pasta `site/`**, com endereço inexistente respondendo 404 (e não o app) e sem endereços de prévia.
+
+O hash vem do `git rev-parse HEAD` do clone, o commit que de fato está sendo publicado; só sem git o script tenta `$CF_PAGES_COMMIT_SHA` e `$WORKERS_CI_COMMIT_SHA`, e cada valor passa pela mesma validação. Os dois primeiros builds pararam exatamente aí (a variável veio vazia e depois como `main`, o nome da branch); por isso o git vem primeiro.
+
+No painel (Workers & Pages → `projet-site-notarapida`), o projeto está ligado só ao repositório `Projet.Site_NotaRapida`, com a branch `main` como produção. Antes do build, o Cloudflare também instala as dependências por conta própria (`npm clean-install`); hoje isso não executa nada, porque a única dependência (`fast-check`, só de testes) não tem script de instalação.
+
+O Cloudflare acrescenta por conta própria os cabeçalhos `Report-To`/`NEL` (relatórios de erro de rede do navegador para o Cloudflare, só de falhas: `success_fraction` 0). Não levam dados digitados, mas são do provedor e não do site.
+
+### GitHub Pages (só o aviso de mudança)
+
+O workflow `.github/workflows/pages.yml` roda a cada push em `main` (e manualmente): o job `testar` executa `npm ci --ignore-scripts` e `npm test` e, se passar, o job `publicar` envia **somente a pasta `redirecionamento/`**: uma página sem scripts, estilos nem imagens (CSP `default-src 'none'`) que avisa da mudança e leva ao endereço novo, e um `404.html` igual, para que favoritos e endereços antigos também cheguem lá. O app saiu do GitHub Pages porque `alansouzadev7.github.io` é a mesma origem para todos os projetos da conta (ver "Endereço compartilhado").
 
 Como o fluxo foi endurecido:
 
@@ -119,29 +135,11 @@ Como o fluxo foi endurecido:
 - Gatilhos só `push` em `main` e manual: nunca `pull_request_target`, então código de forks não roda com permissões do repositório. Nenhum segredo é usado.
 - Dependências: só `devDependencies`, versão exata e `package-lock.json` com integridade.
 
-## Publicação no Cloudflare Pages (em preparação)
-
-O destino final do site: uma origem só do NotaRápida (`https://<projeto>.pages.dev`), em que o `site/_headers` passa a valer (COOP, `frame-ancestors`, `X-Frame-Options`, `nosniff`, `Permissions-Policy`). Isso fecha os ataques da origem compartilhada do GitHub Pages (ver "Limitações do GitHub Pages").
-
-1. Crie a conta no Cloudflare (dash.cloudflare.com) e ative a verificação em duas etapas.
-2. Workers & Pages → Create → Pages → **Connect to Git** → autorize o GitHub **só para o repositório** `Projet.Site_NotaRapida`.
-3. Configuração do build:
-   - Production branch: `main`
-   - Framework preset: **None**
-   - Build command: `npm run publicar:cloudflare`
-   - Build output directory: `site`
-   - Variáveis de ambiente: `NODE_VERSION` = `24` e `SKIP_DEPENDENCY_INSTALL` = `1` (assim a instalação é a do script, com `--ignore-scripts`; o build novo do Cloudflare pode ignorar essa variável e instalar antes por conta própria, o que hoje não executa nada, porque a única dependência não tem script de instalação)
-4. Em Settings → Builds → Branch control, desligue os deploys de prévia (Preview deployments: **None**), para que só a `main` seja publicada.
-
-O script `publicar:cloudflare` faz o mesmo que o workflow do GitHub: instala sem scripts, roda os testes e grava a versão do commit nos endereços. O hash vem do `git rev-parse HEAD` do clone (`versionar.js --commit-do-build`), o commit que de fato está sendo publicado; só sem git o script tenta `$CF_PAGES_COMMIT_SHA` e `$WORKERS_CI_COMMIT_SHA`, e cada valor passa pela mesma validação de hash. Se os testes falharem ou não houver hash válido, o build para e nada é publicado. Os dois primeiros builds no Cloudflare pararam exatamente aí: primeiro a variável veio vazia, depois veio `main` (o nome da branch); por isso o git passou a vir primeiro.
-
-Depois que o novo endereço estiver no ar, a cópia do GitHub Pages deve virar uma página que só aponta para ele (tarefa 26.5); enquanto o app continuar lá, o endereço antigo segue exposto.
-
 ### Arquivos de versões diferentes no navegador
 
-O GitHub Pages deixa o navegador guardar cada arquivo por 10 minutos, cada um por conta própria. Logo depois de uma publicação, ele pode juntar o `index.html` novo com um `.js` antigo (ou o contrário): o botão aparece, mas não funciona, sem nenhum aviso. Duas defesas:
+No GitHub Pages, o navegador guardava cada arquivo por 10 minutos, cada um por conta própria, e logo depois de uma publicação podia juntar o `index.html` novo com um `.js` antigo: o botão aparecia, mas não funcionava. No Cloudflare os arquivos são revalidados a cada visita (`max-age=0, must-revalidate`), e as duas defesas continuam:
 
-- O passo "Versionar os endereços dos arquivos do site" do workflow roda `scripts/versionar.js` na cópia que vai para o Pages e grava o hash do commit nos endereços (`js/app.js?v=e72eb9963a`). O HTML e os arquivos que ele chama passam a ser sempre da mesma publicação. O código-fonte não muda, e o script recusa versão que não seja hexadecimal e falha se não achar nenhuma referência (nunca versiona em silêncio).
+- `scripts/versionar.js` grava o hash do commit nos endereços da cópia publicada (`js/app.js?v=b558d14cd8`), de modo que o HTML e os arquivos que ele chama sejam sempre da mesma publicação. O código-fonte não muda, e o script recusa versão que não seja hexadecimal e falha se não achar nenhuma referência (nunca versiona em silêncio).
 - O app confere o contrato com `notas.js` (`constantes.NIVEL`) e se o HTML tem os elementos de que precisa. Se não bater, mostra "Os arquivos do NotaRápida no seu navegador são de versões diferentes. Recarregue a página…" em vez de deixar botões sem efeito. Quando `app.js` passar a depender de algo novo de `notas.js`, suba o `NIVEL` nos dois arquivos (um teste confere que são iguais).
 
 Se isso aparecer logo depois de uma publicação, recarregue com **Ctrl+F5**.
@@ -193,7 +191,7 @@ Resultados da simulação de ataque (um computador, endereços 127.x.x.x para fi
 
 Limite do que isto prova: proteção contra ataque em massa de verdade (DDoS) só existe na borda, no provedor ou num CDN (o GitHub Pages e o Cloudflare já fazem isso). Este servidor é para uso local e em rede de escola.
 
-### Limitações do GitHub Pages
+### Limitações do GitHub Pages (por que o app saiu de lá)
 
 - Não permite cabeçalhos HTTP personalizados. Por isso `frame-ancestors`, `X-Frame-Options`, HSTS com `includeSubDomains`, `Permissions-Policy`, COOP, COEP e CORP **não se aplicam** lá. O arquivo `site/_headers` traz esses cabeçalhos para Netlify ou Cloudflare Pages e é ignorado pelo GitHub Pages (o `scripts/servir.js` também os usa).
 - O anti-quadro em JavaScript é mais fraco que `frame-ancestors`; num quadro com `sandbox` sem scripts o app não roda e, desde a auditoria de 11/10/2026, também não aparece.
@@ -202,7 +200,7 @@ Limite do que isto prova: proteção contra ataque em massa de verdade (DDoS) s�
   - outro projeto da conta, se tiver uma falha, abre o NotaRápida com `window.open` e lê as notas, vê o que o professor digita e altera a tabela;
   - o repositório `AlanSouzaDev7.github.io` (site da raiz, hoje inexistente), se criado por quem tomar a conta, registra um Service Worker que reescreve o `app.js` do NotaRápida para todas as visitas seguintes daquele navegador.
 
-  Nenhuma checagem dentro do código resolve isso: a página atacante tem os mesmos poderes do site (consegue esconder o `window.opener` e apagar qualquer Service Worker de defesa). A correção é dar ao NotaRápida uma origem só dele: a migração para o **Cloudflare Pages** está em preparação (lá o `site/_headers` passa a valer, com COOP, `frame-ancestors` e `X-Frame-Options`). Até lá: verificação em duas etapas na conta e nenhum projeto de terceiros publicado nela.
+  Nenhuma checagem dentro do código resolve isso: a página atacante tem os mesmos poderes do site (consegue esconder o `window.opener` e apagar qualquer Service Worker de defesa). A correção foi dar ao NotaRápida uma origem só dele: em 11/10/2026 o app passou para o **Cloudflare** (ver [Publicação](#publicação)), e o GitHub Pages ficou só com a página de aviso, que não tem dado nenhum a proteger.
 
 ### Auditoria de segurança (11/10/2026)
 
@@ -219,13 +217,15 @@ Contra o site publicado, num Chrome real. Antes, foi conferido que o computador 
 | Entradas de 1 MB e 3.000 cálculos em rajada | validação em até 16 ms; histórico em 35; 15 MB de memória |
 | Injeção no PDF (1.500 arquivos com `/JavaScript`, `/Launch`, `/URI`, `) Tj`) | 0 problemas; válido no modo estrito do pypdf |
 | Quadros de outra origem (comum, com e sem scripts) | só o aviso aparece (o caso sem scripts foi corrigido nesta auditoria) |
-| Outro projeto na mesma origem e Service Worker na raiz | **funcionaram**; ver "Endereço compartilhado" acima |
+| Outro projeto na mesma origem e Service Worker na raiz | **funcionaram** no GitHub Pages; ver "Endereço compartilhado" acima |
+
+Repetida no endereço novo (Cloudflare), com os arquivos do commit `b558d14` conferidos um a um: todos os ataques acima resistiram de novo, e agora as duas CSPs (cabeçalho e `<meta>`) bloqueiam cada tentativa. Os quatro tipos de quadro são recusados pelo próprio navegador (`frame-ancestors`), sem desenhar nada; uma página de outra origem que abre o site com `window.open` recebe a janela como fechada (COOP), não lê nada (`SecurityError`) e não consegue redirecioná-la; o primeiro acesso por `http://` vira `https://` no navegador (o domínio `.dev` inteiro é HSTS pré-carregado); README, testes, `package.json`, `.git` e `node_modules` respondem 404 (só `site/` foi publicado).
 
 ### Anti-IA (**melhor esforço**, depende da boa vontade de cada robô)
 
 - `site/robots.txt` bloqueia robôs de IA conhecidos (GPTBot, ClaudeBot, CCBot, Google-Extended, PerplexityBot e outros) e libera buscadores comuns.
 - `<meta name="robots" content="noai, noimageai">` e `site/ai.txt` negam o uso para treinamento.
-- Robôs só leem o `robots.txt` da **raiz do domínio**. Em https://alansouzadev7.github.io/Projet.Site_NotaRapida/ o arquivo fica em `/Projet.Site_NotaRapida/robots.txt` e não é consultado; para valer, use um domínio próprio ou copie as regras para o repositório `AlanSouzaDev7.github.io`.
+- Robôs só leem o `robots.txt` da **raiz do domínio**. No endereço novo o site fica na raiz, então `/robots.txt` passa a ser consultado (no GitHub Pages ele ficava em `/Projet.Site_NotaRapida/robots.txt` e era ignorado).
 - Nada disso impede um robô que ignore as convenções; o site é público e qualquer pessoa pode ver o código.
 
 ## Acessibilidade e celulares
@@ -247,9 +247,11 @@ site/                  o que a página carrega (cerca de 185 KB sem compressão,
   img/                 icone.svg e ilustracao.svg (próprios, sem símbolos oficiais)
   _headers  robots.txt  ai.txt
 scripts/servir.js      servidor local (sem dependências)
-scripts/versionar.js   põe a versão nos endereços do index.html na publicação
+scripts/versionar.js   põe a versão nos endereços do index.html no build do Cloudflare
+redirecionamento/      aviso de mudança publicado no GitHub Pages (index.html e 404.html)
+wrangler.jsonc         deploy do Cloudflare: só site/, 404 de verdade, sem prévias
 tests/                 só Node; a página nunca os carrega
-.github/workflows/     testa e publica site/
+.github/workflows/     testa e publica o aviso no GitHub Pages
 .github/dependabot.yml atualizações mensais das actions e do npm
 .kiro/specs/           requisitos, design e tarefas
 ```

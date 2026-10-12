@@ -1,4 +1,7 @@
-# Testa e publica SOMENTE a pasta site/ no GitHub Pages a cada push em main.
+# Testa a cada push em main e publica no GitHub Pages SOMENTE a página de aviso
+# (redirecionamento/), que leva ao endereço novo. O app saiu do GitHub Pages: o endereço
+# alansouzadev7.github.io é compartilhado por todos os projetos da conta (mesma origem).
+# O app é publicado pelo Cloudflare (wrangler.jsonc e npm run publicar:cloudflare).
 name: Testar e publicar no GitHub Pages
 
 on:
@@ -51,17 +54,8 @@ jobs:
         with:
           persist-credentials: false
       - uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d # v6
-      # O GitHub Pages deixa o navegador guardar cada arquivo por 10 minutos, cada um por conta
-      # própria: logo depois de uma publicação ele pode juntar o index.html novo com um .js
-      # antigo (o botão aparece, mas não funciona). Com a versão no endereço (js/app.js?v=...),
-      # o HTML e os arquivos que ele chama são sempre da mesma publicação. Só a cópia que vai
-      # para o Pages é alterada; o código-fonte não muda. O valor é o hash do commit.
-      - name: Versionar os endereços dos arquivos do site
-        env:
-          VERSAO: ${{ github.sha }}
-        run: node scripts/versionar.js site/index.html "$VERSAO"
       - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5
         with:
-          path: site
+          path: redirecionamento
       - id: deploy
         uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5

@@ -54,18 +54,16 @@ test('versionar: HTML sem referências a css/ ou js/ não é alterado em silênc
   fs.rmSync(tmp);
 });
 
-test('o fluxo de publicação versiona o index.html antes de enviar o site, sem texto de evento no comando', () => {
+test('a versão entra na publicação do app (Cloudflare), e o GitHub Pages não leva mais o app', () => {
+  const pkg = JSON.parse(ler('package.json'));
+  assert.match(pkg.scripts['publicar:cloudflare'], /npm test && node scripts\/versionar\.js site\/index\.html --commit-do-build$/,
+    'testa e só depois versiona o index.html que vai para o Cloudflare');
   const fluxo = ler('.github/workflows/pages.yml');
-  const publicar = fluxo.slice(fluxo.indexOf('\n  publicar:'));
-  const posVersao = publicar.indexOf('scripts/versionar.js');
-  const posEnvio = publicar.indexOf('actions/upload-pages-artifact');
-  assert.ok(posVersao > 0 && posEnvio > posVersao, 'a versão entra antes do upload');
-  assert.match(publicar, /env:\s*\n\s+VERSAO:\s*\$\{\{\s*github\.sha\s*\}\}/);
-  assert.match(publicar, /run:\s*node scripts\/versionar\.js site\/index\.html "\$VERSAO"/);
-  const comandos = [...publicar.matchAll(/^\s+run:\s*(.+)$/gm)].map((m) => m[1]);
+  const comandos = [...fluxo.matchAll(/^\s+run:\s*(.+)$/gm)].map((m) => m[1]);
   for (const c of comandos) {
     assert.doesNotMatch(c, /\$\{\{/, 'nenhum ${{ }} dentro de run: ' + c);
   }
+  assert.doesNotMatch(fluxo.replace(/^\s*#.*$/gm, ''), /versionar\.js|path:\s*site\b/);
 });
 
 test('contrato: o NIVEL que o app espera é o que notas.js publica, e o app avisa em vez de quebrar', () => {
