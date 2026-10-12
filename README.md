@@ -86,7 +86,7 @@ npm install
 npm test
 ```
 
-São 152 testes em `tests/` (`node:test` + `fast-check`, versão fixa em `package.json`):
+São 153 testes em `tests/` (`node:test` + `fast-check`, versão fixa em `package.json`):
 
 - `leitor-validador.test.js`: formatos de nota aceitos e rejeitados, limites, ordem e texto das mensagens, nomes.
 - `propriedades.test.js`: propriedades da média, classificação, histórico (mínimo entre N e 35), isolamento entre professores e resultado parcial.
@@ -97,7 +97,7 @@ São 152 testes em `tests/` (`node:test` + `fast-check`, versão fixa em `packag
 - `entradas-adversariais.test.js`: textos feitos para travar o navegador (ReDoS, repetições longas, marcas combinantes, pares substitutos); tempo baixo e crescimento linear.
 - `estatico.test.js`: CSP, ausência de código inline e de APIs proibidas (inclusive `postMessage`, workers e `window.open`), atributos dos campos, aviso de site não oficial, ausência de símbolos oficiais, ordem de foco (inclusive o editor de notas), histórico editável só pelo formulário de edição, `:hover` só em dispositivos com mouse, política de foco em telas de toque, nenhum texto abaixo de 14 px, `_headers`, robots.txt, tamanho do site.
 - `servidor.test.js`: o servidor local (rotas fechadas, travessia de diretório, cabeçalhos, compressão, ETag, métodos, pedidos malformados, limites por endereço, conexões lentas, ataque distribuído, 30 e 300 professores simultâneos).
-- `supply-chain.test.js`: o workflow de publicação (actions presas a commit, permissões mínimas, sem segredos, sem `pull_request_target`) e as dependências.
+- `supply-chain.test.js`: o workflow de publicação (actions presas a commit, permissões mínimas, sem segredos, sem `pull_request_target`), as dependências e o build do Cloudflare Pages (`publicar:cloudflare`: instala sem scripts, testa e versiona).
 - `versao-dos-arquivos.test.js`: o versionamento dos endereços na publicação (`scripts/versionar.js`), o passo do workflow e o contrato entre `notas.js` e `app.js` que dispara o aviso de arquivos de versões diferentes.
 - `sem-script.test.js`: sem scripts (JavaScript desligado ou quadro com `sandbox`), nada do NotaRápida aparece além do aviso; `app.js` só mostra o conteúdo no fim de `iniciar()`.
 
@@ -118,6 +118,24 @@ Como o fluxo foi endurecido:
 - `timeout-minutes`, `persist-credentials: false` no checkout e instalação sem scripts de dependência (`npm ci --ignore-scripts`).
 - Gatilhos só `push` em `main` e manual: nunca `pull_request_target`, então código de forks não roda com permissões do repositório. Nenhum segredo é usado.
 - Dependências: só `devDependencies`, versão exata e `package-lock.json` com integridade.
+
+## Publicação no Cloudflare Pages (em preparação)
+
+O destino final do site: uma origem só do NotaRápida (`https://<projeto>.pages.dev`), em que o `site/_headers` passa a valer (COOP, `frame-ancestors`, `X-Frame-Options`, `nosniff`, `Permissions-Policy`). Isso fecha os ataques da origem compartilhada do GitHub Pages (ver "Limitações do GitHub Pages").
+
+1. Crie a conta no Cloudflare (dash.cloudflare.com) e ative a verificação em duas etapas.
+2. Workers & Pages → Create → Pages → **Connect to Git** → autorize o GitHub **só para o repositório** `Projet.Site_NotaRapida`.
+3. Configuração do build:
+   - Production branch: `main`
+   - Framework preset: **None**
+   - Build command: `npm run publicar:cloudflare`
+   - Build output directory: `site`
+   - Variáveis de ambiente: `NODE_VERSION` = `24` e `SKIP_DEPENDENCY_INSTALL` = `1` (assim a instalação é a do script, com `--ignore-scripts`)
+4. Em Settings → Builds → Branch control, desligue os deploys de prévia (Preview deployments: **None**), para que só a `main` seja publicada.
+
+O script `publicar:cloudflare` faz o mesmo que o workflow do GitHub: instala sem scripts, roda os testes e grava a versão do commit (`$CF_PAGES_COMMIT_SHA`) nos endereços. Se os testes falharem ou o hash faltar, o build para e nada é publicado.
+
+Depois que o novo endereço estiver no ar, a cópia do GitHub Pages deve virar uma página que só aponta para ele (tarefa 26.5); enquanto o app continuar lá, o endereço antigo segue exposto.
 
 ### Arquivos de versões diferentes no navegador
 

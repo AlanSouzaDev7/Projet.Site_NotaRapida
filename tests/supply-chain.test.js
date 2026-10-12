@@ -87,6 +87,19 @@ test('dependências: só devDependencies, versão exata e sem scripts de instala
   }
 });
 
+test('build do Cloudflare Pages: instala sem scripts, testa e versiona com o commit, nessa ordem', () => {
+  const pkg = JSON.parse(lerRaiz('package.json'));
+  const passos = (pkg.scripts['publicar:cloudflare'] || '').split('&&').map((s) => s.trim());
+  assert.deepEqual(passos, [
+    'npm ci --ignore-scripts',
+    'npm test',
+    'node scripts/versionar.js site/index.html "$CF_PAGES_COMMIT_SHA"'
+  ]);
+  // sem o hash (variável vazia), versionar.js recusa a versão e o build falha: nunca publica sem versão
+  const { versionar } = require('../scripts/versionar.js');
+  assert.throws(() => versionar('<script src="js/app.js"></script>', ''), /versão inválida/);
+});
+
 test('o site não publica nada além do necessário: sem mapas de código, segredos, caminhos locais ou e-mails', () => {
   const SITE = path.join(RAIZ, 'site');
   const arquivos = [];
