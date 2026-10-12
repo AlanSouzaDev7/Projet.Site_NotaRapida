@@ -130,10 +130,10 @@ O destino final do site: uma origem só do NotaRápida (`https://<projeto>.pages
    - Framework preset: **None**
    - Build command: `npm run publicar:cloudflare`
    - Build output directory: `site`
-   - Variáveis de ambiente: `NODE_VERSION` = `24` e `SKIP_DEPENDENCY_INSTALL` = `1` (assim a instalação é a do script, com `--ignore-scripts`)
+   - Variáveis de ambiente: `NODE_VERSION` = `24` e `SKIP_DEPENDENCY_INSTALL` = `1` (assim a instalação é a do script, com `--ignore-scripts`; o build novo do Cloudflare pode ignorar essa variável e instalar antes por conta própria, o que hoje não executa nada, porque a única dependência não tem script de instalação)
 4. Em Settings → Builds → Branch control, desligue os deploys de prévia (Preview deployments: **None**), para que só a `main` seja publicada.
 
-O script `publicar:cloudflare` faz o mesmo que o workflow do GitHub: instala sem scripts, roda os testes e grava a versão do commit (`$CF_PAGES_COMMIT_SHA`) nos endereços. Se os testes falharem ou o hash faltar, o build para e nada é publicado.
+O script `publicar:cloudflare` faz o mesmo que o workflow do GitHub: instala sem scripts, roda os testes e grava a versão do commit nos endereços. O hash vem de `$CF_PAGES_COMMIT_SHA` (Cloudflare Pages), de `$WORKERS_CI_COMMIT_SHA` (build novo do Cloudflare, que não tem a primeira) ou, na falta das duas, do `git rev-parse HEAD` do clone. Se os testes falharem ou não houver hash, o build para e nada é publicado (o primeiro build falhou exatamente assim, sem a variável, e por isso o script passou a aceitar as três fontes).
 
 Depois que o novo endereço estiver no ar, a cópia do GitHub Pages deve virar uma página que só aponta para ele (tarefa 26.5); enquanto o app continuar lá, o endereço antigo segue exposto.
 

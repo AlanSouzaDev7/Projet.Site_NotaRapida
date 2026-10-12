@@ -7,7 +7,7 @@
   "scripts": {
     "test": "node --test \"tests/**/*.test.js\"",
     "servir": "node scripts/servir.js",
-    "publicar:cloudflare": "npm ci --ignore-scripts && npm test && node scripts/versionar.js site/index.html \"$CF_PAGES_COMMIT_SHA\""
+    "publicar:cloudflare": "npm ci --ignore-scripts && npm test && node scripts/versionar.js site/index.html \"${CF_PAGES_COMMIT_SHA:-${WORKERS_CI_COMMIT_SHA:-$(git rev-parse HEAD)}}\""
   },
   "devDependencies": {
     "fast-check": "4.10.2"

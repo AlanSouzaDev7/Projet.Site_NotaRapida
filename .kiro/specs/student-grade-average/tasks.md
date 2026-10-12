@@ -406,7 +406,7 @@ Depois da primeira versão (tarefas 1 a 12), o projeto passou por um redesenho v
     - Sem force push nem exclusão, histórico linear, vale para administradores; alertas e correções automáticas; `.github/dependabot.yml`
     - _Requirements: 30.5_
   - [ ] 26.4 Migrar a publicação para o Cloudflare Pages
-    - Feito: `npm run publicar:cloudflare` (instala sem scripts, testa e versiona com `$CF_PAGES_COMMIT_SHA`; falha sem o hash), teste em `supply-chain.test.js` e o passo a passo no README. Falta: conta e conexão com o GitHub, feitas pelo dono da conta; depois, conferir os cabeçalhos de `_headers` no ar e repetir os ataques de mesma origem
+    - Feito: `npm run publicar:cloudflare` (instala sem scripts, testa e versiona com o hash de `$CF_PAGES_COMMIT_SHA`, `$WORKERS_CI_COMMIT_SHA` ou `git rev-parse HEAD`; falha sem o hash), teste em `supply-chain.test.js` e o passo a passo no README. Falta: conta e conexão com o GitHub, feitas pelo dono da conta; depois, conferir os cabeçalhos de `_headers` no ar e repetir os ataques de mesma origem
     - _Requirements: 30.3_
   - [ ] 26.5 Trocar a cópia do GitHub Pages por uma página que aponta para o novo endereço
     - _Requirements: 30.4_

@@ -93,9 +93,10 @@ test('build do Cloudflare Pages: instala sem scripts, testa e versiona com o com
   assert.deepEqual(passos, [
     'npm ci --ignore-scripts',
     'npm test',
-    'node scripts/versionar.js site/index.html "$CF_PAGES_COMMIT_SHA"'
+    // o hash do commit: a variável do Cloudflare Pages, a do build de Workers ou o git do clone
+    'node scripts/versionar.js site/index.html "${CF_PAGES_COMMIT_SHA:-${WORKERS_CI_COMMIT_SHA:-$(git rev-parse HEAD)}}"'
   ]);
-  // sem o hash (variável vazia), versionar.js recusa a versão e o build falha: nunca publica sem versão
+  // sem o hash (tudo vazio), versionar.js recusa a versão e o build falha: nunca publica sem versão
   const { versionar } = require('../scripts/versionar.js');
   assert.throws(() => versionar('<script src="js/app.js"></script>', ''), /versão inválida/);
 });
