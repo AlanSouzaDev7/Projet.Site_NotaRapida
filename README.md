@@ -86,7 +86,7 @@ npm install
 npm test
 ```
 
-São 153 testes em `tests/` (`node:test` + `fast-check`, versão fixa em `package.json`):
+São 155 testes em `tests/` (`node:test` + `fast-check`, versão fixa em `package.json`):
 
 - `leitor-validador.test.js`: formatos de nota aceitos e rejeitados, limites, ordem e texto das mensagens, nomes.
 - `propriedades.test.js`: propriedades da média, classificação, histórico (mínimo entre N e 35), isolamento entre professores e resultado parcial.
@@ -133,7 +133,7 @@ O destino final do site: uma origem só do NotaRápida (`https://<projeto>.pages
    - Variáveis de ambiente: `NODE_VERSION` = `24` e `SKIP_DEPENDENCY_INSTALL` = `1` (assim a instalação é a do script, com `--ignore-scripts`; o build novo do Cloudflare pode ignorar essa variável e instalar antes por conta própria, o que hoje não executa nada, porque a única dependência não tem script de instalação)
 4. Em Settings → Builds → Branch control, desligue os deploys de prévia (Preview deployments: **None**), para que só a `main` seja publicada.
 
-O script `publicar:cloudflare` faz o mesmo que o workflow do GitHub: instala sem scripts, roda os testes e grava a versão do commit nos endereços. O hash vem de `$CF_PAGES_COMMIT_SHA` (Cloudflare Pages), de `$WORKERS_CI_COMMIT_SHA` (build novo do Cloudflare, que não tem a primeira) ou, na falta das duas, do `git rev-parse HEAD` do clone. Se os testes falharem ou não houver hash, o build para e nada é publicado (o primeiro build falhou exatamente assim, sem a variável, e por isso o script passou a aceitar as três fontes).
+O script `publicar:cloudflare` faz o mesmo que o workflow do GitHub: instala sem scripts, roda os testes e grava a versão do commit nos endereços. O hash vem do `git rev-parse HEAD` do clone (`versionar.js --commit-do-build`), o commit que de fato está sendo publicado; só sem git o script tenta `$CF_PAGES_COMMIT_SHA` e `$WORKERS_CI_COMMIT_SHA`, e cada valor passa pela mesma validação de hash. Se os testes falharem ou não houver hash válido, o build para e nada é publicado. Os dois primeiros builds no Cloudflare pararam exatamente aí: primeiro a variável veio vazia, depois veio `main` (o nome da branch); por isso o git passou a vir primeiro.
 
 Depois que o novo endereço estiver no ar, a cópia do GitHub Pages deve virar uma página que só aponta para ele (tarefa 26.5); enquanto o app continuar lá, o endereço antigo segue exposto.
 

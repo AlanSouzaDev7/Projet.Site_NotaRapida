@@ -93,12 +93,36 @@ test('build do Cloudflare Pages: instala sem scripts, testa e versiona com o com
   assert.deepEqual(passos, [
     'npm ci --ignore-scripts',
     'npm test',
-    // o hash do commit: a variável do Cloudflare Pages, a do build de Workers ou o git do clone
-    'node scripts/versionar.js site/index.html "${CF_PAGES_COMMIT_SHA:-${WORKERS_CI_COMMIT_SHA:-$(git rev-parse HEAD)}}"'
+    'node scripts/versionar.js site/index.html --commit-do-build'
   ]);
-  // sem o hash (tudo vazio), versionar.js recusa a versão e o build falha: nunca publica sem versão
-  const { versionar } = require('../scripts/versionar.js');
+});
+
+test('commit do build: o git do clone primeiro; variáveis só sem git, e só se forem um hash', () => {
+  const { commitDoBuild, versionar } = require('../scripts/versionar.js');
+  const A = 'a'.repeat(40);
+  const B = 'b'.repeat(40);
+  const C = 'c'.repeat(40);
+  // o git vence, mesmo com as variáveis preenchidas
+  assert.deepEqual(commitDoBuild({ CF_PAGES_COMMIT_SHA: B, WORKERS_CI_COMMIT_SHA: C }, () => A + '\n'),
+    { versao: A, origem: 'git rev-parse HEAD' });
+  // sem git: as variáveis, na ordem
+  assert.equal(commitDoBuild({ CF_PAGES_COMMIT_SHA: B, WORKERS_CI_COMMIT_SHA: C }, () => '').origem, 'CF_PAGES_COMMIT_SHA');
+  assert.equal(commitDoBuild({ WORKERS_CI_COMMIT_SHA: C }, () => '').origem, 'WORKERS_CI_COMMIT_SHA');
+  // o que o Cloudflare já entregou de verdade: vazio e "main" (o nome da branch)
+  assert.equal(commitDoBuild({ CF_PAGES_COMMIT_SHA: 'main', WORKERS_CI_COMMIT_SHA: C }, () => '').origem, 'WORKERS_CI_COMMIT_SHA');
+  assert.equal(commitDoBuild({ CF_PAGES_COMMIT_SHA: '', WORKERS_CI_COMMIT_SHA: 'main' }, () => 'fatal: not a git repository'), null);
+  assert.equal(commitDoBuild({}, () => ''), null);
+  // texto que tenta escapar do atributo nunca vira versão
+  assert.equal(commitDoBuild({ CF_PAGES_COMMIT_SHA: 'abc1234"><script>' }, () => ''), null);
+  // e versionar continua recusando versão vazia: nunca publica sem versão
   assert.throws(() => versionar('<script src="js/app.js"></script>', ''), /versão inválida/);
+});
+
+test('commit do build: no repositório de verdade, a versão é o HEAD do git', () => {
+  const { commitDoBuild } = require('../scripts/versionar.js');
+  const { execFileSync } = require('node:child_process');
+  const head = execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8', cwd: path.join(__dirname, '..') }).trim();
+  assert.deepEqual(commitDoBuild({ CF_PAGES_COMMIT_SHA: 'main' }), { versao: head, origem: 'git rev-parse HEAD' });
 });
 
 test('o site não publica nada além do necessário: sem mapas de código, segredos, caminhos locais ou e-mails', () => {
